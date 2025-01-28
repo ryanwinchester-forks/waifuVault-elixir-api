@@ -1,6 +1,6 @@
 # WaifuVault
 
-**TODO: Add description**
+Should look a lot like [the Python API](https://github.com/waifuvault/waifuVault-python-api)
 
 ## Installation
 
