@@ -7,7 +7,9 @@ defmodule WaifuVault.MixProject do
       version: "0.0.1",
       elixir: "~> 1.16",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      docs: [
+      ]
     ]
   end
 
@@ -22,7 +24,8 @@ defmodule WaifuVault.MixProject do
   defp deps do
     [
       {:req, "~> 0.5.8"},
-      {:plug, "~> 1.0"}
+      {:plug, "~> 1.0"},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
     ]
   end
 end

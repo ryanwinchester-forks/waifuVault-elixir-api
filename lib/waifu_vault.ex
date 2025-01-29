@@ -27,6 +27,7 @@ defmodule WaifuVault do
   {:ok, "some-uuid-type-value"}
   ```
   """
+  @doc group: "Buckets"
   def create_bucket() do
     case Req.get(@request_options, url: "/bucket/create") do
       {:ok, %Req.Response{status: 200, body: body}} ->
@@ -47,6 +48,7 @@ defmodule WaifuVault do
   {:ok, true}
   ```
   """
+  @doc group: "Buckets"
   def delete_bucket(token) do
     case Req.delete(@request_options, url: "/bucket/#{token}") do
       {:ok, %Req.Response{status: 200, body: body}} ->
@@ -59,6 +61,7 @@ defmodule WaifuVault do
 
   # === handle_error
   # Handle errors similarly to the Python API
+  @doc false
   def handle_error(req_response, is_download \\ false)
 
   def handle_error({_, %Req.Response{status: 403}}, true) do
@@ -92,6 +95,7 @@ defmodule WaifuVault do
 
   # === XYZ_response_from_map
   # Convert string-keyed camelCase responses to atom-keyed camelCase maps
+  @doc false
   def bucket_response_from_map(map) do
     %{
       token: map["token"],
@@ -100,6 +104,7 @@ defmodule WaifuVault do
     }
   end
 
+  @doc false
   def file_response_from_map(map) do
     %{
       token: map["token"],
@@ -112,6 +117,7 @@ defmodule WaifuVault do
     }
   end
 
+  @doc false
   def album_response_from_map(map) do
     %{
       files: Enum.map(map["files"] || [], &file_response_from_map/1),
@@ -122,6 +128,7 @@ defmodule WaifuVault do
     }
   end
 
+  @doc false
   def file_options_from_map(map) do
     %{
       hideFilename: map["hideFilename"] || false,
