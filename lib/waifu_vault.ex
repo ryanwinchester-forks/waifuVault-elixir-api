@@ -7,7 +7,8 @@ defmodule WaifuVault do
   ```
   """
 
-  # Ensure tests don't hit the real server (and there is probably a better way to do this)
+  # Ensure tests don't hit the real server by using Req.Test to intercept all HTTP calls
+  # (note that there is *probably* a better way to do this)
   @request_options (Mix.env() == :test &&
                       Req.new(
                         base_url: "https://example.com/rest",
@@ -83,6 +84,10 @@ defmodule WaifuVault do
       end
 
     {:error, "Error #{body_status} (#{name}): #{message}"}
+  end
+
+  def handle_error({:error, unexpected}, _) do
+    {:error, "Unexpected Error #{inspect(unexpected)}"}
   end
 
   # === XYZ_response_from_map
