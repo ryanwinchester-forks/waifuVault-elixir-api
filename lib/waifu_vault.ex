@@ -24,9 +24,14 @@ defmodule WaifuVault do
   """
   def create_bucket() do
     case Req.get(@request_options, url: "/bucket/create") do
-      {:ok, %Req.Response{status: 200, body: body}} -> {:ok, bucket_response_from_map(body)}
-      {:ok, response} -> {:error, "Error #{response.status} (#{response.status}): {response.body}"}
-      {:error, error} -> {:error, error.reason}
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        {:ok, bucket_response_from_map(body)}
+
+      {:ok, response} ->
+        {:error, "Error #{response.status} (#{response.status}): {response.body}"}
+
+      {:error, error} ->
+        {:error, error.reason}
     end
   end
 
@@ -56,7 +61,7 @@ defmodule WaifuVault do
       token: map["token"],
       bucketToken: map["bucketToken"],
       publicToken: map["publicToken"],
-      name: map["name"],
+      name: map["name"]
     }
   end
 
