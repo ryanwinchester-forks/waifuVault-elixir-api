@@ -15,6 +15,8 @@ def deps do
 end
 ```
 
+Run `mix test --trace --seed 0` to see all the test descriptions in order, as they are run.
+
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at <https://hexdocs.pm/waifu_vault>.

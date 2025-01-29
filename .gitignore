@@ -24,3 +24,5 @@ waifu_vault-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+/junk
