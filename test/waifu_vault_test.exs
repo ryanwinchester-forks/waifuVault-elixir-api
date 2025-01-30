@@ -5,6 +5,9 @@ defmodule WaifuVaultTest do
     To print out the tests in order: `mix test --trace --seed 0`
     To include the slow tests: `mix test --include slow`
     To run *only* slow tests: `mix test --only slow`
+
+  Note that although the functions include examples, we cannot use
+  `doctest WaifuVault` since our tests need Req.Test stubs to work.
   """
   use ExUnit.Case
   require WaifuVault

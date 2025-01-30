@@ -44,7 +44,7 @@ defmodule WaifuVault do
   IMPORTANT: All contained files will be DELETED along with the Bucket!
 
   ```
-  iex> {:ok, boolean} = WaifuVault.delete_bucket()
+  iex> {:ok, boolean} = WaifuVault.delete_bucket("some-valid-uuid-token")
   {:ok, true}
   ```
   """
