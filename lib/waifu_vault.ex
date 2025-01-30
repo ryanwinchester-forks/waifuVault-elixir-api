@@ -63,7 +63,7 @@ defmodule WaifuVault do
   The get_bucket/1 function returns the list of files and albums contained in a bucket.
   Try it out in iex to see what it returns, which is fairly
   self-explanatory - except for:
-    
+
   * `dateCreated` - can be converted with `DateTime.from_unix( dateCreated, :millisecond)`
   * `retentionPeriod` - in milliseconds
 
@@ -121,10 +121,12 @@ defmodule WaifuVault do
   # Convert string-keyed camelCase responses to atom-keyed camelCase maps
   @doc false
   def bucket_response_from_map(map) do
+    IO.inspect(map, label: "Raw map passed to bucket_response_from_map/1")
+    files = Enum.map(map["files"] || [], &file_response_from_map/1)
     %{
       token: map["token"],
-      files: Enum.map(map["files"] || [], &file_response_from_map/1),
-      albums: Enum.map(map["albums"] || [], &album_response_from_map/1)
+      files: files,
+      albums: Enum.map(map["albums"] || [], fn album -> album_response_from_map(album, files) end)
     }
   end
 
@@ -136,21 +138,21 @@ defmodule WaifuVault do
       retentionPeriod: map["retentionPeriod"],
       bucket: map["bucket"],
       views: map["views"],
-      album: album_response_from_map(map["album"] || %{}),
+      album: album_response_from_map(map["album"] || %{}, []),
       options: file_options_from_map(map["options"] || %{})
     }
   end
 
   @doc false
-  def album_response_from_map(map) do
+  def album_response_from_map(map, files) do
+    album_token = map["token"]
     %{
-      # Will this be needed by get_album ?
-      # files: Enum.map(map["files"] || [], &file_response_from_map/1),
-      token: map["token"],
+      token: album_token,
       bucketToken: map["bucket"],
       publicToken: map["publicToken"],
       name: map["name"],
-      dateCreated: map["dateCreated"]
+      dateCreated: map["dateCreated"],
+      files: Enum.filter(files, fn file -> file.album.token == album_token end)
     }
   end
 
