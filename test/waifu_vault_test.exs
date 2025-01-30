@@ -12,18 +12,102 @@ defmodule WaifuVaultTest do
   use ExUnit.Case
   require WaifuVault
 
+  # Real data, with minor modifications
+  @example_bucket_token "111d81d4-22c6-43f8-bba4-b82a3ef52ce3"
+  @get_bucket_example %{
+    "albums" => [
+      %{
+        "bucket" => @example_bucket_token,
+        "dateCreated" => 1_738_201_401_000,
+        "name" => "some-album",
+        "publicToken" => nil,
+        "token" => "de1c61c6-1321-4ec6-bafa-626ae1bca1d3"
+      }
+    ],
+    "files" => [
+      %{
+        "album" => %{
+          "bucket" => @example_bucket_token,
+          "dateCreated" => 1_738_201_401_000,
+          "name" => "some-album",
+          "publicToken" => nil,
+          "token" => "de1c61c6-1321-4ec6-bafa-626ae1bca1d3"
+        },
+        "bucket" => @example_bucket_token,
+        "options" => %{
+          "hideFilename" => false,
+          "oneTimeDownload" => false,
+          "protected" => false
+        },
+        "retentionPeriod" => 28_732_211_121,
+        "token" => "f1bc1b41-1b87-4db1-b00d-fea7e610bdcb",
+        "url" => "https://example.com/f/1738201375511/frog.jpg",
+        "views" => 1
+      },
+      %{
+        "album" => %{
+          "bucket" => @example_bucket_token,
+          "dateCreated" => 1_738_201_401_000,
+          "name" => "some-album",
+          "publicToken" => nil,
+          "token" => "de1c61c6-1321-4ec6-bafa-626ae1bca1d3"
+        },
+        "bucket" => @example_bucket_token,
+        "options" => %{
+          "hideFilename" => false,
+          "oneTimeDownload" => false,
+          "protected" => false
+        },
+        "retentionPeriod" => 27_617_033_528,
+        "token" => "1f18b1ee-42cf-4842-1cd7-0aa0763125e5",
+        "url" =>
+          "https://example.com/f/1738201375845/hot guitarist, band frontwoman s-1366061015.png",
+        "views" => 4
+      }
+    ],
+    "token" => @example_bucket_token
+  }
+
   describe "create_bucket/0" do
     test "bucket is created" do
       Req.Test.stub(WaifuVault, fn conn ->
-        Req.Test.json(conn, %{"token" => "server token"})
+        Req.Test.json(conn, %{"token" => "server-token"})
       end)
 
       {:ok, bucketResponse} = WaifuVault.create_bucket()
 
       refute is_nil(bucketResponse)
-      assert bucketResponse.token == "server token"
+      assert bucketResponse.token == "server-token"
       assert bucketResponse.files == []
       assert bucketResponse.albums == []
+    end
+
+    test "creating twice returns the same bucket" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, %{"token" => "server-token"})
+      end)
+
+      {:ok, bucketResponse1} = WaifuVault.create_bucket()
+      {:ok, bucketResponse2} = WaifuVault.create_bucket()
+
+      refute is_nil(bucketResponse1)
+      refute is_nil(bucketResponse1.token)
+      assert bucketResponse1.token == bucketResponse2.token
+    end
+  end
+
+  describe "get_bucket/1" do
+    test "bucket details are returned" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, @get_bucket_example)
+      end)
+
+      {:ok, bucketResponse} = WaifuVault.get_bucket(@example_bucket_token)
+
+      refute is_nil(bucketResponse)
+      assert bucketResponse.token == @example_bucket_token
+      assert Enum.count(bucketResponse.files) == 2
+      assert Enum.count(bucketResponse.albums) == 1
     end
   end
 

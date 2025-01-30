@@ -59,6 +59,30 @@ defmodule WaifuVault do
     end
   end
 
+  @doc """
+  The get_bucket/1 function returns the list of files and albums contained in a bucket.
+  Try it out in iex to see what it returns, which is fairly
+  self-explanatory - except for:
+    
+  * `dateCreated` - can be converted with `DateTime.from_unix( dateCreated, :millisecond)`
+  * `retentionPeriod` - in milliseconds
+
+  ```
+  iex> {:ok, boolean} = WaifuVault.get_bucket("some-valid-uuid-token")
+  {:ok, Map}
+  ```
+  """
+  @doc group: "Buckets"
+  def get_bucket(token) do
+    case Req.post(@request_options, url: "/bucket/get", json: %{"bucket_token" => token}) do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        {:ok, bucket_response_from_map(body)}
+
+      any_other_response ->
+        handle_error(any_other_response)
+    end
+  end
+
   # === handle_error
   # Handle errors similarly to the Python API
   @doc false
@@ -120,11 +144,13 @@ defmodule WaifuVault do
   @doc false
   def album_response_from_map(map) do
     %{
-      files: Enum.map(map["files"] || [], &file_response_from_map/1),
+      # Will this be needed by get_album ?
+      # files: Enum.map(map["files"] || [], &file_response_from_map/1),
       token: map["token"],
-      bucketToken: map["bucketToken"],
+      bucketToken: map["bucket"],
       publicToken: map["publicToken"],
-      name: map["name"]
+      name: map["name"],
+      dateCreated: map["dateCreated"]
     }
   end
 
