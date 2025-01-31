@@ -2,7 +2,15 @@ defmodule WaifuVault do
   @moduledoc """
   This API wrapper is meant to conform to the [WaifuVault Swagger docs](https://waifuvault.moe/api-docs/).
 
+  To include in your project:
   ```
+  # In your mix.exs deps/0 function
+  {:waifu_vault, "~> 0.0.2"}
+  ```
+
+  To Use:
+  ```
+  # In your_file.ex
   require WaifuVault
   ```
   """
@@ -91,7 +99,7 @@ defmodule WaifuVault do
 
   ## Examples
   ```
-  iex> {:ok, album} = waifuvault.create_album("some-bucket-token", "album-name")
+  iex> {:ok, album} = WaifuVault.create_album("some-bucket-token", "album-name")
   {:ok, Map}
   ```
   """
@@ -100,6 +108,34 @@ defmodule WaifuVault do
     case Req.post(@request_options, url: "/album/#{bucket_token}", json: %{"name" => album_name}) do
       {:ok, %Req.Response{status: 200, body: body}} ->
         {:ok, album_response_from_map(body, [])}
+
+      any_other_response ->
+        handle_error(any_other_response)
+    end
+  end
+
+  @doc """
+  The delete_album/2 removes the specified album
+
+  ## Examples
+  ```
+  # First deletion attempt
+  iex> WaifuVault.delete_album("album-token")
+  {:ok, %{"description" => "album deleted", "success" => true}}
+
+  # Attempt a second deletion
+  iex> WaifuVault.delete_album("album-token")
+  {:error,
+  "Error 400 (BAD_REQUEST): Album with token album-token not found"}
+  ```
+  """
+  @doc group: "Albums"
+  def delete_album(album_token, delete_files \\ false) do
+    case Req.delete(@request_options,
+           url: "/album/#{album_token}?deleteFiles=#{delete_files == true}"
+         ) do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        {:ok, body}
 
       any_other_response ->
         handle_error(any_other_response)

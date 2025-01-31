@@ -189,6 +189,18 @@ defmodule WaifuVaultTest do
     end
   end
 
+  describe "delete_album/1" do
+    test "album details are returned" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, %{"description" => "album deleted", "success" => true})
+      end)
+
+      {:ok, albumResponse} = WaifuVault.delete_album(@example_album_token)
+
+      assert albumResponse == %{"description" => "album deleted", "success" => true}
+    end
+  end
+
   describe "get_album/1" do
     test "album details are returned" do
       Req.Test.stub(WaifuVault, fn conn ->
