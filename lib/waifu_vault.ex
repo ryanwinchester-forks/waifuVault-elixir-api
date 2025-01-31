@@ -163,6 +163,36 @@ defmodule WaifuVault do
     end
   end
 
+  @doc """
+  The get_restrictions/0 function returns server limits for the current IP address.
+
+  ## Examples
+  ```
+  iex> {:ok, restrictions} = WaifuVault.get_restrictions()
+  {:ok,
+    [
+      %{type: "MAX_FILE_SIZE", value: 104857600},
+      %{
+        type: "BANNED_MIME_TYPE",
+        value: "application/x-dosexec,application/x-executable,application/x-hdf5,application/x-java-archive,application/vnd.rar"
+      }
+    ]
+  }
+  ```
+  """
+  @doc group: "Albums"
+  def get_restrictions() do
+    case Req.get(@request_options, url: "/resources/restrictions") do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        {:ok,
+         body
+         |> Enum.map(fn %{"type" => type, "value" => value} -> %{type: type, value: value} end)}
+
+      any_other_response ->
+        handle_error(any_other_response)
+    end
+  end
+
   # === handle_error
   # Handle errors similarly to the Python API
   @doc false

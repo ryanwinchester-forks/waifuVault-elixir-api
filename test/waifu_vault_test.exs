@@ -103,6 +103,15 @@ defmodule WaifuVaultTest do
     "publicToken" => nil,
     "token" => "de1c61c6-1321-4ec6-bafa-626ae1bca1d3"
   }
+  @restrictions_response [
+    %{type: "MAX_FILE_SIZE", value: 536_870_912},
+    %{type: "BANNED_MIME_TYPE", value: "application/x-msdownload,application/x-executable"}
+  ]
+
+  #  @restrictions_small_response [
+  #    %{type: "MAX_FILE_SIZE", value: 100},
+  #    %{type: "BANNED_MIME_TYPE", value: "application/x-msdownload,application/x-executable"}
+  #  ]
 
   describe "create_bucket/0" do
     test "bucket is created" do
@@ -213,6 +222,19 @@ defmodule WaifuVaultTest do
       assert albumResponse.token == @example_album_token
       assert albumResponse.bucketToken == @example_bucket_token
       assert Enum.count(albumResponse.files) == 2
+    end
+  end
+
+  describe "get_restrictions/0" do
+    test "response with plenty of space" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, @restrictions_response)
+      end)
+
+      {:ok, restrictions} = WaifuVault.get_restrictions()
+
+      refute is_nil(restrictions)
+      assert restrictions == @restrictions_response
     end
   end
 
