@@ -174,8 +174,23 @@ defmodule WaifuVaultTest do
     end
   end
 
+  describe "create_album/1" do
+    test "album details are returned" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, @get_album_example)
+      end)
+
+      {:ok, albumResponse} = WaifuVault.create_album(@example_bucket_token, "album-name")
+
+      refute is_nil(albumResponse)
+      assert albumResponse.token == @example_album_token
+      assert albumResponse.bucketToken == @example_bucket_token
+      assert Enum.count(albumResponse.files) == 0
+    end
+  end
+
   describe "get_album/1" do
-    test "get_album details are returned" do
+    test "album details are returned" do
       Req.Test.stub(WaifuVault, fn conn ->
         Req.Test.json(conn, @get_album_example)
       end)

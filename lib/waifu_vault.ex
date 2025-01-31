@@ -87,6 +87,26 @@ defmodule WaifuVault do
   end
 
   @doc """
+  The create_album/2 creates an album within the specified bucket.
+
+  ## Examples
+  ```
+  iex> {:ok, album} = waifuvault.create_album("some-bucket-token", "album-name")
+  {:ok, Map}
+  ```
+  """
+  @doc group: "Albums"
+  def create_album(bucket_token, album_name) do
+    case Req.post(@request_options, url: "/album/#{bucket_token}", json: %{"name" => album_name}) do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        {:ok, album_response_from_map(body, [])}
+
+      any_other_response ->
+        handle_error(any_other_response)
+    end
+  end
+
+  @doc """
   The get_album/1 function returns album info, given either the public or private token.
 
   ## Examples
