@@ -14,6 +14,7 @@ defmodule WaifuVaultTest do
 
   # Real data, with minor modifications
   @example_bucket_token "111d81d4-22c6-43f8-bba4-b82a3ef52ce3"
+  @example_album_token "de1c61c6-1321-4ec6-bafa-626ae1bca1d3"
   @get_bucket_example %{
     "albums" => [
       %{
@@ -21,7 +22,7 @@ defmodule WaifuVaultTest do
         "dateCreated" => 1_738_201_401_000,
         "name" => "some-album",
         "publicToken" => nil,
-        "token" => "de1c61c6-1321-4ec6-bafa-626ae1bca1d3"
+        "token" => @example_album_token
       }
     ],
     "files" => [
@@ -31,7 +32,7 @@ defmodule WaifuVaultTest do
           "dateCreated" => 1_738_201_401_000,
           "name" => "some-album",
           "publicToken" => nil,
-          "token" => "de1c61c6-1321-4ec6-bafa-626ae1bca1d3"
+          "token" => @example_album_token
         },
         "bucket" => @example_bucket_token,
         "options" => %{
@@ -50,7 +51,7 @@ defmodule WaifuVaultTest do
           "dateCreated" => 1_738_201_401_000,
           "name" => "some-album",
           "publicToken" => nil,
-          "token" => "de1c61c6-1321-4ec6-bafa-626ae1bca1d3"
+          "token" => @example_album_token
         },
         "bucket" => @example_bucket_token,
         "options" => %{
@@ -66,6 +67,41 @@ defmodule WaifuVaultTest do
       }
     ],
     "token" => @example_bucket_token
+  }
+  @get_album_example %{
+    "bucketToken" => @example_bucket_token,
+    "dateCreated" => 1_738_201_401_000,
+    "files" => [
+      %{
+        "album" => nil,
+        "bucket" => @example_bucket_token,
+        "options" => %{
+          "hideFilename" => false,
+          "oneTimeDownload" => false,
+          "protected" => false
+        },
+        "retentionPeriod" => 28_644_786_051,
+        "token" => "f1bc1b41-1b87-4db1-b00d-fea7e610bdcb",
+        "url" => "https://waifuvault.moe/f/1738201375511/pepe.jpg",
+        "views" => 1
+      },
+      %{
+        "album" => nil,
+        "bucket" => @example_bucket_token,
+        "options" => %{
+          "hideFilename" => false,
+          "oneTimeDownload" => false,
+          "protected" => false
+        },
+        "retentionPeriod" => 28_633_011_767,
+        "token" => "ed02f1c8-8142-4e35-abb7-73e1c0a2ba11",
+        "url" => "https://waifuvault.moe/f/1738201376708/moreballs.jpg",
+        "views" => 1
+      }
+    ],
+    "name" => "test-album",
+    "publicToken" => nil,
+    "token" => "de1c61c6-1321-4ec6-bafa-626ae1bca1d3"
   }
 
   describe "create_bucket/0" do
@@ -135,6 +171,21 @@ defmodule WaifuVaultTest do
 
       {:error, "Error 400 (BAD_REQUEST): Unable to delete bucket with token incorrect-token"} =
         WaifuVault.delete_bucket("incorrect-token")
+    end
+  end
+
+  describe "get_album/1" do
+    test "get_album details are returned" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, @get_album_example)
+      end)
+
+      {:ok, albumResponse} = WaifuVault.get_album(@example_album_token)
+
+      refute is_nil(albumResponse)
+      assert albumResponse.token == @example_album_token
+      assert albumResponse.bucketToken == @example_bucket_token
+      assert Enum.count(albumResponse.files) == 2
     end
   end
 
