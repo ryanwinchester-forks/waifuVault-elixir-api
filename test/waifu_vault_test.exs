@@ -107,6 +107,7 @@ defmodule WaifuVaultTest do
     %{type: "MAX_FILE_SIZE", value: 536_870_912},
     %{type: "BANNED_MIME_TYPE", value: "application/x-msdownload,application/x-executable"}
   ]
+  @file_stats_response %{recordCount: 1420, recordSize: "1.92 GiB"}
 
   #  @restrictions_small_response [
   #    %{type: "MAX_FILE_SIZE", value: 100},
@@ -235,6 +236,19 @@ defmodule WaifuVaultTest do
 
       refute is_nil(restrictions)
       assert restrictions == @restrictions_response
+    end
+  end
+
+  describe "get_file_stats/0" do
+    test "response with plenty of space" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, @file_stats_response)
+      end)
+
+      {:ok, file_stats} = WaifuVault.get_file_stats()
+
+      refute is_nil(file_stats)
+      assert file_stats == @file_stats_response
     end
   end
 

@@ -23,6 +23,9 @@ defmodule WaifuVault do
                         plug: {Req.Test, WaifuVault}
                       )) || Req.new(base_url: "https://waifuvault.moe/rest")
 
+  @restriction_keys [:type, :value]
+  @file_info_keys [:recordCount, :recordSize]
+
   @doc """
   Buckets are virtual collections that are linked to your IP and a token. When you create a bucket, you will receive a bucket token that you can use in Get Bucket to get all the files in that bucket
 
@@ -180,17 +183,51 @@ defmodule WaifuVault do
   }
   ```
   """
-  @doc group: "Albums"
+  @doc group: "Resources"
   def get_restrictions() do
     case Req.get(@request_options, url: "/resources/restrictions") do
       {:ok, %Req.Response{status: 200, body: body}} ->
         {:ok,
-         body
-         |> Enum.map(fn %{"type" => type, "value" => value} -> %{type: type, value: value} end)}
+         Enum.map(body, fn restriction ->
+           convert_to_atom_keys(restriction, @restriction_keys)
+         end)}
 
       any_other_response ->
         handle_error(any_other_response)
     end
+  end
+
+  @doc """
+  The get_file_stats/0 function returns server limits for the current IP address.
+
+  ## Examples
+  ```
+  iex> WaifuVault.get_file_stats
+  {:ok, %{"recordCount" => 1420, "recordSize" => "1.92 GiB"}}
+  ```
+  """
+  @doc group: "Resources"
+  def get_file_stats() do
+    case Req.get(@request_options, url: "/resources/stats/files") do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        {:ok, convert_to_atom_keys(body, @file_info_keys)}
+
+      any_other_response ->
+        handle_error(any_other_response)
+    end
+  end
+
+  @doc false
+  def convert_to_atom_keys(map, atoms) do
+    strings = Enum.map(atoms, fn atom -> "#{atom}" end)
+
+    Enum.reduce(map, %{}, fn {key, value}, acc ->
+      if key in strings do
+        put_in(acc, [String.to_existing_atom(key)], value)
+      else
+        acc
+      end
+    end)
   end
 
   # === handle_error
