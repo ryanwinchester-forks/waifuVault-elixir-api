@@ -1,6 +1,7 @@
 # WaifuVault
 
-Should look a lot like [the Python API](https://github.com/waifuvault/waifuVault-python-api)
+Should conform to [the swagger docs](https://waifuvault.moe/api-docs/) 
+and look a lot like [the python API](https://github.com/waifuvault/waifuVault-python-api)
 
 ## Installation
 

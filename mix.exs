@@ -6,9 +6,37 @@ defmodule WaifuVault.MixProject do
       app: :waifu_vault,
       version: "0.0.1",
       elixir: "~> 1.16",
+      description: "API wrapper for waifuvault.moe",
+      package: %{
+        licenses: ["MIT"],
+        links: %{
+          "GitHub" => "https://github.com/waifuvault/waifuVault-elixir-api",
+          "Swagger" => "https://waifuvault.moe/api-docs/",
+          "Web Site" => "https://waifuvault.moe/"
+        }
+      },
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       docs: []
+    ]
+  end
+
+  def description do
+    """
+    API wrapper for https://waifuvault.moe/
+    """
+  end
+
+  def package do
+    [
+      files: ["lib", "mix.exs", "README*", "LICENSE*"],
+      maintainers: ["John Baylor"],
+      licenses: ["MIT"],
+      links: %{
+        "GitHub" => "https://github.com/waifuvault/waifuVault-elixir-api",
+        "Swagger" => "https://waifuvault.moe/api-docs/",
+        "Web Site" => "https://waifuvault.moe/"
+      }
     ]
   end
 

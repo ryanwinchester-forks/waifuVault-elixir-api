@@ -1,6 +1,6 @@
 defmodule WaifuVault do
   @moduledoc """
-  Documentation for `WaifuVault`.
+  This API wrapper is meant to conform to the [WaifuVault Swagger docs](https://waifuvault.moe/api-docs/).
 
   ```
   require WaifuVault
@@ -22,6 +22,7 @@ defmodule WaifuVault do
 
   To create a bucket, use the create_bucket function. This function does not take any arguments.
 
+  ## Examples
   ```
   iex> {:ok, bucket} = WaifuVault.create_bucket()
   {:ok, "some-uuid-type-value"}
@@ -43,6 +44,7 @@ defmodule WaifuVault do
 
   IMPORTANT: All contained files will be DELETED along with the Bucket!
 
+  ## Examples
   ```
   iex> {:ok, boolean} = WaifuVault.delete_bucket("some-valid-uuid-token")
   {:ok, true}
@@ -61,12 +63,13 @@ defmodule WaifuVault do
 
   @doc """
   The get_bucket/1 function returns the list of files and albums contained in a bucket.
-  Try it out in iex to see what it returns, which is fairly
-  self-explanatory - except for:
+  The bucket has a `dateCreated` value that can be converted
+  with `DateTime.from_unix( dateCreated, :millisecond)`
 
-  * `dateCreated` - can be converted with `DateTime.from_unix( dateCreated, :millisecond)`
-  * `retentionPeriod` - in milliseconds
+  Individual files have a `retentionPeriod` which is the UNIX timestamp in milliseconds for when the
+  file will expire. It can be converted with `DateTime.from_unix( retentionPeriod, :millisecond)`
 
+  ## Examples
   ```
   iex> {:ok, boolean} = WaifuVault.get_bucket("some-valid-uuid-token")
   {:ok, Map}
@@ -77,6 +80,27 @@ defmodule WaifuVault do
     case Req.post(@request_options, url: "/bucket/get", json: %{"bucket_token" => token}) do
       {:ok, %Req.Response{status: 200, body: body}} ->
         {:ok, bucket_response_from_map(body)}
+
+      any_other_response ->
+        handle_error(any_other_response)
+    end
+  end
+
+  @doc """
+  The get_album/1 function returns album info, given either the public or private token.
+
+  ## Examples
+  ```
+  iex> {:ok, boolean} = WaifuVault.get_album("some-valid-album-token")
+  {:ok, Map}
+  ```
+  """
+  @doc group: "Albums"
+  def get_album(token) do
+    case Req.get(@request_options, url: "/album/#{token}") do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        files = Enum.map(body["files"] || [], &file_response_from_map/1)
+        {:ok, album_response_from_map(body, files)}
 
       any_other_response ->
         handle_error(any_other_response)
@@ -121,8 +145,8 @@ defmodule WaifuVault do
   # Convert string-keyed camelCase responses to atom-keyed camelCase maps
   @doc false
   def bucket_response_from_map(map) do
-    IO.inspect(map, label: "Raw map passed to bucket_response_from_map/1")
     files = Enum.map(map["files"] || [], &file_response_from_map/1)
+
     %{
       token: map["token"],
       files: files,
@@ -144,15 +168,21 @@ defmodule WaifuVault do
   end
 
   @doc false
+  def album_response_from_map(map, _) when map == %{}, do: nil
+
   def album_response_from_map(map, files) do
     album_token = map["token"]
+
     %{
       token: album_token,
-      bucketToken: map["bucket"],
+      bucketToken: map["bucket"] || map["bucketToken"],
       publicToken: map["publicToken"],
       name: map["name"],
       dateCreated: map["dateCreated"],
-      files: Enum.filter(files, fn file -> file.album.token == album_token end)
+      files:
+        Enum.filter(files, fn file ->
+          is_nil(file.album) || file.album.token in [nil, album_token]
+        end)
     }
   end
 
