@@ -15,104 +15,106 @@ defmodule WaifuVaultTest do
   # Real data, with minor modifications
   @example_bucket_token "111d81d4-22c6-43f8-bba4-b82a3ef52ce3"
   @example_album_token "de1c61c6-1321-4ec6-bafa-626ae1bca1d3"
+  @example_file_token "f1bc1b41-1b87-4db1-b00d-fea7e610bdcb"
   @get_bucket_example %{
-    "albums" => [
+    albums: [
       %{
-        "bucket" => @example_bucket_token,
-        "dateCreated" => 1_738_201_401_000,
-        "name" => "some-album",
-        "publicToken" => nil,
-        "token" => @example_album_token
+        bucket: @example_bucket_token,
+        dateCreated: 1_738_201_401_000,
+        name: "some-album",
+        publicToken: nil,
+        token: @example_album_token
       }
     ],
-    "files" => [
+    files: [
       %{
-        "album" => %{
-          "bucket" => @example_bucket_token,
-          "dateCreated" => 1_738_201_401_000,
-          "name" => "some-album",
-          "publicToken" => nil,
-          "token" => @example_album_token
+        album: %{
+          bucket: @example_bucket_token,
+          dateCreated: 1_738_201_401_000,
+          name: "some-album",
+          publicToken: nil,
+          token: @example_album_token
         },
-        "bucket" => @example_bucket_token,
-        "options" => %{
-          "hideFilename" => false,
-          "oneTimeDownload" => false,
-          "protected" => false
+        bucket: @example_bucket_token,
+        options: %{
+          hideFilename: false,
+          oneTimeDownload: false,
+          protected: false
         },
-        "retentionPeriod" => 28_732_211_121,
-        "token" => "f1bc1b41-1b87-4db1-b00d-fea7e610bdcb",
-        "url" => "https://example.com/f/1738201375511/frog.jpg",
-        "views" => 1
+        retentionPeriod: 28_732_211_121,
+        token: @example_file_token,
+        url: "https://example.com/f/1738201375511/frog.jpg",
+        views: 1
       },
       %{
-        "album" => %{
-          "bucket" => @example_bucket_token,
-          "dateCreated" => 1_738_201_401_000,
-          "name" => "some-album",
-          "publicToken" => nil,
-          "token" => @example_album_token
+        album: %{
+          bucket: @example_bucket_token,
+          dateCreated: 1_738_201_401_000,
+          name: "some-album",
+          publicToken: nil,
+          token: @example_album_token
         },
-        "bucket" => @example_bucket_token,
-        "options" => %{
-          "hideFilename" => false,
-          "oneTimeDownload" => false,
-          "protected" => false
+        bucket: @example_bucket_token,
+        options: %{
+          hideFilename: false,
+          oneTimeDownload: false,
+          protected: false
         },
-        "retentionPeriod" => 27_617_033_528,
-        "token" => "1f18b1ee-42cf-4842-1cd7-0aa0763125e5",
-        "url" =>
+        retentionPeriod: 27_617_033_528,
+        token: "1f18b1ee-42cf-4842-1cd7-0aa0763125e5",
+        url:
           "https://example.com/f/1738201375845/hot guitarist, band frontwoman s-1366061015.png",
-        "views" => 4
+        views: 4
       }
     ],
-    "token" => @example_bucket_token
+    token: @example_bucket_token
   }
   @get_album_example %{
-    "bucketToken" => @example_bucket_token,
-    "dateCreated" => 1_738_201_401_000,
-    "files" => [
+    bucketToken: @example_bucket_token,
+    dateCreated: 1_738_201_401_000,
+    files: [
       %{
-        "album" => nil,
-        "bucket" => @example_bucket_token,
-        "options" => %{
-          "hideFilename" => false,
-          "oneTimeDownload" => false,
-          "protected" => false
+        album: nil,
+        bucket: @example_bucket_token,
+        options: %{
+          hideFilename: false,
+          oneTimeDownload: false,
+          protected: false
         },
-        "retentionPeriod" => 28_644_786_051,
-        "token" => "f1bc1b41-1b87-4db1-b00d-fea7e610bdcb",
-        "url" => "https://waifuvault.moe/f/1738201375511/pepe.jpg",
-        "views" => 1
+        retentionPeriod: 28_644_786_051,
+        token: @example_file_token,
+        url: "https://waifuvault.moe/f/1738201375511/pepe.jpg",
+        views: 1
       },
       %{
-        "album" => nil,
-        "bucket" => @example_bucket_token,
-        "options" => %{
-          "hideFilename" => false,
-          "oneTimeDownload" => false,
-          "protected" => false
+        album: nil,
+        bucket: @example_bucket_token,
+        options: %{
+          hideFilename: false,
+          oneTimeDownload: false,
+          protected: false
         },
-        "retentionPeriod" => 28_633_011_767,
-        "token" => "ed02f1c8-8142-4e35-abb7-73e1c0a2ba11",
-        "url" => "https://waifuvault.moe/f/1738201376708/moreballs.jpg",
-        "views" => 1
+        retentionPeriod: 28_633_011_767,
+        token: "ed02f1c8-8142-4e35-abb7-73e1c0a2ba11",
+        url: "https://waifuvault.moe/f/1738201376708/moreballs.jpg",
+        views: 1
       }
     ],
-    "name" => "test-album",
-    "publicToken" => nil,
-    "token" => "de1c61c6-1321-4ec6-bafa-626ae1bca1d3"
+    name: "test-album",
+    publicToken: nil,
+    token: @example_album_token
   }
   @restrictions_response [
     %{type: "MAX_FILE_SIZE", value: 536_870_912},
     %{type: "BANNED_MIME_TYPE", value: "application/x-msdownload,application/x-executable"}
   ]
-  @file_stats_response %{recordCount: 1420, recordSize: "1.92 GiB"}
 
   #  @restrictions_small_response [
   #    %{type: "MAX_FILE_SIZE", value: 100},
   #    %{type: "BANNED_MIME_TYPE", value: "application/x-msdownload,application/x-executable"}
   #  ]
+
+  @file_stats_response %{recordCount: 1420, recordSize: "1.92 GiB"}
 
   describe "create_bucket/0" do
     test "bucket is created" do
@@ -223,6 +225,34 @@ defmodule WaifuVaultTest do
       assert albumResponse.token == @example_album_token
       assert albumResponse.bucketToken == @example_bucket_token
       assert Enum.count(albumResponse.files) == 2
+    end
+  end
+
+  describe "associate_file/1" do
+    test "album details are returned" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, @get_album_example)
+      end)
+
+      {:ok, albumResponse} =
+        WaifuVault.associate_file(@example_album_token, [@example_file_token])
+
+      refute is_nil(albumResponse)
+      assert albumResponse == @get_album_example
+    end
+  end
+
+  describe "disassociate_file/1" do
+    test "album details are returned" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, @get_album_example)
+      end)
+
+      {:ok, albumResponse} =
+        WaifuVault.disassociate_file(@example_album_token, ["file-token-to-disassociate"])
+
+      refute is_nil(albumResponse)
+      assert albumResponse == @get_album_example
     end
   end
 

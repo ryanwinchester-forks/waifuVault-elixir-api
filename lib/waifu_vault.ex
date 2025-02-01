@@ -1,18 +1,18 @@
 defmodule WaifuVault do
   @moduledoc """
-  This API wrapper is meant to conform to the [WaifuVault Swagger docs](https://waifuvault.moe/api-docs/).
+    This API wrapper is meant to conform to the [WaifuVault Swagger docs](https://waifuvault.moe/api-docs/).
 
-  To include in your project:
-  ```
-  # In your mix.exs deps/0 function
-  {:waifu_vault, "~> 0.0.2"}
-  ```
+    To include in your project:
+    ```
+    # In your mix.exs deps/0 function
+    {:waifu_vault, "~> 0.0.2"}
+    ```
 
-  To Use:
-  ```
-  # In your_file.ex
-  require WaifuVault
-  ```
+    To Use:
+    ```
+    # In your_file.ex
+    require WaifuVault
+    ```
   """
 
   # Ensure tests don't hit the real server by using Req.Test to intercept all HTTP calls
@@ -27,17 +27,17 @@ defmodule WaifuVault do
   @file_info_keys [:recordCount, :recordSize]
 
   @doc """
-  Buckets are virtual collections that are linked to your IP and a token. When you create a bucket, you will receive a bucket token that you can use in Get Bucket to get all the files in that bucket
+    Buckets are virtual collections that are linked to your IP and a token. When you create a bucket, you will receive a bucket token that you can use in Get Bucket to get all the files in that bucket
 
-  NOTE: Only one bucket is allowed per client IP address, if you call it more than once, it will return the same bucket token
+    NOTE: Only one bucket is allowed per client IP address, if you call it more than once, it will return the same bucket token
 
-  To create a bucket, use the create_bucket function. This function does not take any arguments.
+    To create a bucket, use the create_bucket function. This function does not take any arguments.
 
-  ## Examples
-  ```
-  iex> {:ok, bucket} = WaifuVault.create_bucket()
-  {:ok, "some-uuid-type-value"}
-  ```
+    ## Examples
+    ```
+    iex> {:ok, bucket} = WaifuVault.create_bucket()
+    {:ok, "some-uuid-type-value"}
+    ```
   """
   @doc group: "Buckets"
   def create_bucket() do
@@ -51,15 +51,15 @@ defmodule WaifuVault do
   end
 
   @doc """
-  Deleting a bucket will delete the bucket and all the files it contains.
+    Deleting a bucket will delete the bucket and all the files it contains.
 
-  IMPORTANT: All contained files will be DELETED along with the Bucket!
+    IMPORTANT: All contained files will be DELETED along with the Bucket!
 
-  ## Examples
-  ```
-  iex> {:ok, boolean} = WaifuVault.delete_bucket("some-valid-uuid-token")
-  {:ok, true}
-  ```
+    ## Examples
+    ```
+    iex> {:ok, boolean} = WaifuVault.delete_bucket("some-valid-uuid-token")
+    {:ok, true}
+    ```
   """
   @doc group: "Buckets"
   def delete_bucket(token) do
@@ -73,18 +73,18 @@ defmodule WaifuVault do
   end
 
   @doc """
-  The get_bucket/1 function returns the list of files and albums contained in a bucket.
-  The bucket has a `dateCreated` value that can be converted
-  with `DateTime.from_unix( dateCreated, :millisecond)`
+    The get_bucket/1 function returns the list of files and albums contained in a bucket.
+    The bucket has a `dateCreated` value that can be converted
+    with `DateTime.from_unix( dateCreated, :millisecond)`
 
-  Individual files have a `retentionPeriod` which is the UNIX timestamp in milliseconds for when the
-  file will expire. It can be converted with `DateTime.from_unix( retentionPeriod, :millisecond)`
+    Individual files have a `retentionPeriod` which is the UNIX timestamp in milliseconds for when the
+    file will expire. It can be converted with `DateTime.from_unix( retentionPeriod, :millisecond)`
 
-  ## Examples
-  ```
-  iex> {:ok, boolean} = WaifuVault.get_bucket("some-valid-uuid-token")
-  {:ok, Map}
-  ```
+    ## Examples
+    ```
+    iex> {:ok, boolean} = WaifuVault.get_bucket("some-valid-uuid-token")
+    {:ok, Map}
+    ```
   """
   @doc group: "Buckets"
   def get_bucket(token) do
@@ -98,13 +98,13 @@ defmodule WaifuVault do
   end
 
   @doc """
-  The create_album/2 creates an album within the specified bucket.
+    The create_album/2 creates an album within the specified bucket.
 
-  ## Examples
-  ```
-  iex> {:ok, album} = WaifuVault.create_album("some-bucket-token", "album-name")
-  {:ok, Map}
-  ```
+    ## Examples
+    ```
+    iex> {:ok, album} = WaifuVault.create_album("some-bucket-token", "album-name")
+    {:ok, Map}
+    ```
   """
   @doc group: "Albums"
   def create_album(bucket_token, album_name) do
@@ -118,19 +118,19 @@ defmodule WaifuVault do
   end
 
   @doc """
-  The delete_album/2 removes the specified album
+      The delete_album/2 removes the specified album
 
-  ## Examples
-  ```
-  # First deletion attempt
-  iex> WaifuVault.delete_album("album-token")
-  {:ok, %{"description" => "album deleted", "success" => true}}
+      ## Examples
+      ```
+      # First deletion attempt
+      iex> WaifuVault.delete_album("album-token")
+      {:ok, %{"description" => "album deleted", "success" => true}}
 
-  # Attempt a second deletion
-  iex> WaifuVault.delete_album("album-token")
-  {:error,
-  "Error 400 (BAD_REQUEST): Album with token album-token not found"}
-  ```
+      # Attempt a second deletion
+      iex> WaifuVault.delete_album("album-token")
+      {:error,
+      "Error 400 (BAD_REQUEST): Album with token album-token not found"}
+      ```
   """
   @doc group: "Albums"
   def delete_album(album_token, delete_files \\ false) do
@@ -146,13 +146,13 @@ defmodule WaifuVault do
   end
 
   @doc """
-  The get_album/1 function returns album info, given either the public or private token.
+    The get_album/1 function returns album info, given either the public or private token.
 
-  ## Examples
-  ```
-  iex> {:ok, boolean} = WaifuVault.get_album("some-valid-album-token")
-  {:ok, Map}
-  ```
+    ## Examples
+    ```
+    iex> {:ok, album_response} = WaifuVault.get_album("some-valid-album-token")
+    {:ok, Map}
+    ```
   """
   @doc group: "Albums"
   def get_album(token) do
@@ -167,21 +167,69 @@ defmodule WaifuVault do
   end
 
   @doc """
-  The get_restrictions/0 function returns server limits for the current IP address.
+    The associate_file/2 function connects one or more files to an album.
 
-  ## Examples
-  ```
-  iex> {:ok, restrictions} = WaifuVault.get_restrictions()
-  {:ok,
-    [
-      %{type: "MAX_FILE_SIZE", value: 104857600},
-      %{
-        type: "BANNED_MIME_TYPE",
-        value: "application/x-dosexec,application/x-executable,application/x-hdf5,application/x-java-archive,application/vnd.rar"
-      }
-    ]
-  }
-  ```
+    ## Examples
+    ```
+    iex> {:ok, album_response} = WaifuVault.associate_file("some-valid-album-token", ["valid-file1". "valid-file2"])
+    {:ok, Map}
+    ```
+  """
+  @doc group: "Albums"
+  def associate_file(album_token, file_tokens) do
+    case Req.post(@request_options,
+           url: "/album/#{album_token}/associate",
+           json: %{"fileTokens" => file_tokens}
+         ) do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        files = Enum.map(body["files"] || [], &file_response_from_map/1)
+        {:ok, album_response_from_map(body, files)}
+
+      any_other_response ->
+        handle_error(any_other_response)
+    end
+  end
+
+  @doc """
+    The disassociate_file/2 function connects one or more files to an album.
+
+    ## Examples
+    ```
+    iex> {:ok, album_response} = WaifuVault.disassociate_file("some-valid-album-token", ["valid-file1". "valid-file2"])
+    {:ok, Map}
+    ```
+  """
+  @doc group: "Albums"
+  def disassociate_file(album_token, file_tokens) do
+    case Req.post(@request_options,
+           url: "/album/#{album_token}/disassociate",
+           json: %{"fileTokens" => file_tokens}
+         ) do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        files = Enum.map(body["files"] || [], &file_response_from_map/1)
+        {:ok, album_response_from_map(body, files)}
+
+      any_other_response ->
+        handle_error(any_other_response)
+    end
+  end
+
+  @doc """
+    The get_restrictions/0 function returns server limits for the current IP address.
+
+    ## Examples
+    ```
+    iex> {:ok, restrictions} = WaifuVault.get_restrictions()
+    {:ok,
+      [
+        %{type: "MAX_FILE_SIZE", value: 104857600},
+        %{
+          type: "BANNED_MIME_TYPE",
+          value: "application/x-dosexec,application/x-executable,application/x-hdf5,application/x-java-archive,application/vnd.rar"
+        }
+      ]
+    }
+    ```
   """
   @doc group: "Resources"
   def get_restrictions() do
@@ -198,13 +246,13 @@ defmodule WaifuVault do
   end
 
   @doc """
-  The get_file_stats/0 function returns server limits for the current IP address.
+    The get_file_stats/0 function returns server limits for the current IP address.
 
-  ## Examples
-  ```
-  iex> WaifuVault.get_file_stats
-  {:ok, %{"recordCount" => 1420, "recordSize" => "1.92 GiB"}}
-  ```
+    ## Examples
+    ```
+    iex> WaifuVault.get_file_stats
+    {:ok, %{"recordCount" => 1420, "recordSize" => "1.92 GiB"}}
+    ```
   """
   @doc group: "Resources"
   def get_file_stats() do

@@ -12,7 +12,7 @@ defmodule WaifuVault.MixProject do
         links: %{
           "GitHub" => "https://github.com/waifuvault/waifuVault-elixir-api",
           "Swagger" => "https://waifuvault.moe/api-docs/",
-          "Web Site" => "https://waifuvault.moe/"
+          "WaifuVault Web Site" => "https://waifuvault.moe/"
         }
       },
       start_permanent: Mix.env() == :prod,
