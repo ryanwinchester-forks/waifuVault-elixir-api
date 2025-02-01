@@ -215,6 +215,51 @@ defmodule WaifuVault do
   end
 
   @doc """
+    The share_album/2 function takes the album's private token and returns the public URL.
+    Note that the newly-created public token is available via get_album/1
+    (or, apparently, from just sharing again).
+
+    ## Examples (unclear if the 2nd response is a bug)
+    ```
+    iex> {:ok, url} = WaifuVault.share_album("some-valid-album-token")
+    {:ok, "https://waifuvault.moe/public-token"}
+    iex> {:ok, url} = WaifuVault.share_album("some-valid-album-token")
+    {:ok, "public-token"}
+    ```
+  """
+  @doc group: "Albums"
+  def share_album(album_token) do
+    case Req.get(@request_options, url: "/album/share/#{album_token}") do
+      {:ok, %Req.Response{status: 200, body: %{"description" => description, "success" => true}}} ->
+        {:ok, description}
+
+      any_other_response ->
+        handle_error(any_other_response)
+    end
+  end
+
+  @doc """
+    The revoke_album/2 function disables public sharing.
+    Note that the next call to get_album/1 will show a `nil` public token.
+
+    ## Examples
+    ```
+    iex> {:ok, album_response} = WaifuVault.revoke_album("some-valid-album-token")
+    {:ok, "album unshared"}
+    ```
+  """
+  @doc group: "Albums"
+  def revoke_album(album_token) do
+    case Req.get(@request_options, url: "/album/revoke/#{album_token}") do
+      {:ok, %Req.Response{status: 200, body: %{"description" => description, "success" => true}}} ->
+        {:ok, description}
+
+      any_other_response ->
+        handle_error(any_other_response)
+    end
+  end
+
+  @doc """
     The get_restrictions/0 function returns server limits for the current IP address.
 
     ## Examples

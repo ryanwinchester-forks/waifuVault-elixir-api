@@ -256,6 +256,55 @@ defmodule WaifuVaultTest do
     end
   end
 
+  describe "share_album/1" do
+    test "1st call returns the URL to the now-public album" do
+      expected_url = "https://waifuvault.moe/album/#{@example_album_token}"
+
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, %{
+          "description" => expected_url,
+          "success" => true
+        })
+      end)
+
+      {:ok, url} = WaifuVault.share_album(@example_album_token)
+
+      assert url == expected_url
+    end
+
+    test "2nd call just returns the public token" do
+      expected_url = "https://waifuvault.moe/album/#{@example_album_token}"
+
+      Req.Test.expect(
+        WaifuVault,
+        &Req.Test.json(&1, %{"description" => expected_url, "success" => true})
+      )
+
+      Req.Test.expect(
+        WaifuVault,
+        &Req.Test.json(&1, %{"description" => @example_album_token, "success" => true})
+      )
+
+      {:ok, url} = WaifuVault.share_album(@example_album_token)
+      {:ok, public_token} = WaifuVault.share_album(@example_album_token)
+
+      assert url == expected_url
+      assert public_token == @example_album_token
+    end
+  end
+
+  describe "revoke_album/1" do
+    test "unshares the album" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, %{"description" => "album unshared", "success" => true})
+      end)
+
+      {:ok, message} = WaifuVault.revoke_album(@example_album_token)
+
+      assert message == "album unshared"
+    end
+  end
+
   describe "get_restrictions/0" do
     test "response with plenty of space" do
       Req.Test.stub(WaifuVault, fn conn ->
