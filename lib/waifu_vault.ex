@@ -260,6 +260,69 @@ defmodule WaifuVault do
   end
 
   @doc """
+    The get_file/2 function retrieves the specified file. The password is ignored unless
+    the file is password-protected.
+
+    ## Examples
+    ```
+    iex> {:ok, bitstring} = WaifuVault.get_file("some-valid-album-token", "some-password")
+    {:ok, <<many bytes>>}
+    ```
+  """
+  @doc group: "Files"
+  def get_file(album_response, password \\ nil)
+
+  def get_file(%{url: url}, nil) do
+    _get_file(%{url: url})
+  end
+
+  def get_file(%{url: url}, password) do
+    _get_file(%{url: url}, %{"x-password" => password})
+  end
+
+  def get_file(%{token: token}, _password) do
+    with {:ok, map} = file_info(token),
+         {:ok, file_contents} = get_file(map) do
+      {:ok, file_contents}
+    end
+  end
+
+  @doc false
+  def _get_file(request_fields, headers \\ nil) do
+    req =
+      (is_nil(headers) && @request_options) ||
+        Req.merge(@request_options, headers: headers)
+
+    case Req.get(req, Map.to_list(request_fields)) do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        {:ok, body}
+
+      any_other_response ->
+        handle_error(any_other_response)
+    end
+  end
+
+  @doc """
+    The file_info/2 function retrieves fileResponse data for the specified file token.
+
+    ## Examples
+    ```
+    iex> {:ok, map} = WaifuVault.file_info("some-valid-file-token")
+    {:ok, %{...}}
+    ```
+  """
+  @doc group: "Files"
+  def file_info(token, formatted \\ false) do
+    case Req.get(@request_options, url: "/#{token}", json: %{formatted: "#{formatted == true}"}) do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        {:ok, file_response_from_map(body)}
+
+      any_other_response ->
+        handle_error(any_other_response)
+    end
+  end
+
+  @doc """
     The get_restrictions/0 function returns server limits for the current IP address.
 
     ## Examples

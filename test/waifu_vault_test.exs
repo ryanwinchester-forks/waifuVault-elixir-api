@@ -62,30 +62,31 @@ defmodule WaifuVaultTest do
         },
         retentionPeriod: 27_617_033_528,
         token: "1f18b1ee-42cf-4842-1cd7-0aa0763125e5",
-        url:
-          "https://example.com/f/1738201375845/hot guitarist, band frontwoman s-1366061015.png",
+        url: "https://example.com/f/1738201375845/hot%20guitarist.png",
         views: 4
       }
     ],
     token: @example_bucket_token
   }
+  @example_file_info %{
+    album: nil,
+    bucket: @example_bucket_token,
+    options: %{
+      hideFilename: false,
+      oneTimeDownload: false,
+      protected: false
+    },
+    retentionPeriod: 28_644_786_051,
+    token: @example_file_token,
+    url: "https://example.com/f/1738201375511/frog.jpg",
+    views: 1
+  }
+
   @get_album_example %{
     bucketToken: @example_bucket_token,
     dateCreated: 1_738_201_401_000,
     files: [
-      %{
-        album: nil,
-        bucket: @example_bucket_token,
-        options: %{
-          hideFilename: false,
-          oneTimeDownload: false,
-          protected: false
-        },
-        retentionPeriod: 28_644_786_051,
-        token: @example_file_token,
-        url: "https://waifuvault.moe/f/1738201375511/pepe.jpg",
-        views: 1
-      },
+      @example_file_info,
       %{
         album: nil,
         bucket: @example_bucket_token,
@@ -96,7 +97,7 @@ defmodule WaifuVaultTest do
         },
         retentionPeriod: 28_633_011_767,
         token: "ed02f1c8-8142-4e35-abb7-73e1c0a2ba11",
-        url: "https://waifuvault.moe/f/1738201376708/moreballs.jpg",
+        url: "https://example.com/f/1738201376708/balls.jpg",
         views: 1
       }
     ],
@@ -105,14 +106,9 @@ defmodule WaifuVaultTest do
     token: @example_album_token
   }
   @restrictions_response [
-    %{type: "MAX_FILE_SIZE", value: 536_870_912},
+    %{type: "MAX_FILE_SIZE", value: 100},
     %{type: "BANNED_MIME_TYPE", value: "application/x-msdownload,application/x-executable"}
   ]
-
-  #  @restrictions_small_response [
-  #    %{type: "MAX_FILE_SIZE", value: 100},
-  #    %{type: "BANNED_MIME_TYPE", value: "application/x-msdownload,application/x-executable"}
-  #  ]
 
   @file_stats_response %{recordCount: 1420, recordSize: "1.92 GiB"}
 
@@ -258,7 +254,7 @@ defmodule WaifuVaultTest do
 
   describe "share_album/1" do
     test "1st call returns the URL to the now-public album" do
-      expected_url = "https://waifuvault.moe/album/#{@example_album_token}"
+      expected_url = "https://example.com/album/#{@example_album_token}"
 
       Req.Test.stub(WaifuVault, fn conn ->
         Req.Test.json(conn, %{
@@ -273,7 +269,7 @@ defmodule WaifuVaultTest do
     end
 
     test "2nd call just returns the public token" do
-      expected_url = "https://waifuvault.moe/album/#{@example_album_token}"
+      expected_url = "https://example.com/album/#{@example_album_token}"
 
       Req.Test.expect(
         WaifuVault,
@@ -302,6 +298,62 @@ defmodule WaifuVaultTest do
       {:ok, message} = WaifuVault.revoke_album(@example_album_token)
 
       assert message == "album unshared"
+    end
+  end
+
+  describe "get_file/2" do
+    test "returns file data when given a URL" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, <<0x68, 0x65, 0x6C, 0x6C, 0x6F>>)
+      end)
+
+      {:ok, file_contents} = WaifuVault.get_file(%{url: "https://example.com/hello.txt"})
+
+      refute is_nil(file_contents)
+      assert file_contents == "hello"
+    end
+
+    test "returns file data for an encrypted file when given a URL and password" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, "hello")
+      end)
+
+      {:ok, file_contents} =
+        WaifuVault.get_file(%{url: "https://example.com/hello.txt"}, "valid-password")
+
+      refute is_nil(file_contents)
+      assert file_contents == <<0x68, 0x65, 0x6C, 0x6C, 0x6F>>
+    end
+
+    test "returns file data when given a file token" do
+      # It should make 2 requests: one for the file_info and then another for the contents.
+      Req.Test.expect(
+        WaifuVault,
+        &Req.Test.json(&1, %{"url" => "some URL"})
+      )
+
+      Req.Test.expect(
+        WaifuVault,
+        &Req.Test.json(&1, <<0x68, 0x65, 0x6C, 0x6C, 0x6F>>)
+      )
+
+      {:ok, file_contents} = WaifuVault.get_file(%{token: @example_file_token})
+
+      refute is_nil(file_contents)
+      assert file_contents == "hello"
+    end
+  end
+
+  describe "file_info/2" do
+    test "returns the file metadata" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, @example_file_info)
+      end)
+
+      {:ok, map} = WaifuVault.file_info(@example_file_token)
+
+      refute is_nil(map)
+      assert map == @example_file_info
     end
   end
 
