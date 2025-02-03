@@ -5,7 +5,7 @@ defmodule WaifuVault do
     To include in your project:
     ```
     # In your mix.exs deps/0 function
-    {:waifu_vault, "~> 0.0.2"}
+    {:waifu_vault, "~> 0.0.3"}
     ```
 
     To Use:
