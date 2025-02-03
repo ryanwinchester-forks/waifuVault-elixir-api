@@ -313,7 +313,7 @@ defmodule WaifuVaultTest do
       assert file_contents == "hello"
     end
 
-    test "returns file data for an encrypted file when given a URL and password" do
+    test "returns file contents for an encrypted file when given a URL and password" do
       Req.Test.stub(WaifuVault, fn conn ->
         Req.Test.json(conn, "hello")
       end)
@@ -325,11 +325,11 @@ defmodule WaifuVaultTest do
       assert file_contents == <<0x68, 0x65, 0x6C, 0x6C, 0x6F>>
     end
 
-    test "returns file data when given a file token" do
+    test "returns file contents when given a file token" do
       # It should make 2 requests: one for the file_info and then another for the contents.
       Req.Test.expect(
         WaifuVault,
-        &Req.Test.json(&1, %{"url" => "some URL"})
+        &Req.Test.json(&1, @example_file_info)
       )
 
       Req.Test.expect(
@@ -337,7 +337,7 @@ defmodule WaifuVaultTest do
         &Req.Test.json(&1, <<0x68, 0x65, 0x6C, 0x6C, 0x6F>>)
       )
 
-      {:ok, file_contents} = WaifuVault.get_file(%{token: @example_file_token})
+      {:ok, file_contents} = WaifuVault.get_file(%{token: @example_file_info.token})
 
       refute is_nil(file_contents)
       assert file_contents == "hello"

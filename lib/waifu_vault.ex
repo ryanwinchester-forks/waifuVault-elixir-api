@@ -30,6 +30,7 @@ defmodule WaifuVault do
     Buckets are virtual collections that are linked to your IP and a token. When you create a bucket,
     you will receive a bucket token that you can use in Get Bucket to get all the files in that bucket.
     Later calls to create_bucket/0 will return the same token as long as your IP address doesn't change.
+    [Swagger docs](https://waifuvault.moe/api-docs/#/Bucket%20Management/bucketManagementCreateBucket)
 
     ```
     iex> {:ok, bucket} = WaifuVault.create_bucket()
@@ -49,6 +50,7 @@ defmodule WaifuVault do
 
   @doc """
     Deleting a bucket will delete the bucket and all the files it contains.
+    [Swagger docs](https://waifuvault.moe/api-docs/#/Bucket%20Management/bucketManagementDeleteBucket)
 
     IMPORTANT: All contained files will be DELETED along with the Bucket!
 
@@ -75,6 +77,7 @@ defmodule WaifuVault do
 
     Individual files have a `retentionPeriod` which is the UNIX timestamp in milliseconds for when the
     file will expire. It can be converted with `DateTime.from_unix( retentionPeriod, :millisecond)`
+    [Swagger docs](https://waifuvault.moe/api-docs/#/Bucket%20Management/bucketManagementGetBucket)
 
     ```
     iex> {:ok, boolean} = WaifuVault.get_bucket("some-valid-uuid-token")
@@ -94,6 +97,7 @@ defmodule WaifuVault do
 
   @doc """
     The create_album/2 function creates an album within the specified bucket.
+    [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementCreateAlbum)
 
     ```
     iex> {:ok, album} = WaifuVault.create_album("some-bucket-token", "album-name")
@@ -113,6 +117,7 @@ defmodule WaifuVault do
 
   @doc """
     The delete_album/2 function removes the specified album.
+    [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementDeleteAlbum)
 
     ```
     # First deletion attempt
@@ -140,6 +145,7 @@ defmodule WaifuVault do
 
   @doc """
     The get_album/1 function returns album info, given the private token.
+    [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementGetAlbum)
 
     ```
     iex> {:ok, album_response} = WaifuVault.get_album("some-valid-album-token")
@@ -147,8 +153,8 @@ defmodule WaifuVault do
     ```
   """
   @doc group: "Albums"
-  def get_album(token) do
-    case Req.get(@request_options, url: "/album/#{token}") do
+  def get_album(album_token) do
+    case Req.get(@request_options, url: "/album/#{album_token}") do
       {:ok, %Req.Response{status: 200, body: body}} ->
         files = Enum.map(body["files"] || [], &file_response_from_map/1)
         {:ok, album_response_from_map(body, files)}
@@ -160,6 +166,7 @@ defmodule WaifuVault do
 
   @doc """
     The associate_file/2 function connects one or more files to an album.
+    [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementAssociateFileWithAlbum)
 
     ```
     iex> {:ok, album_response} = WaifuVault.associate_file("some-valid-album-token", ["valid-file1". "valid-file2"])
@@ -183,6 +190,7 @@ defmodule WaifuVault do
 
   @doc """
     The disassociate_file/2 function dis-connects one or more files from an album.
+    [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementDisassociateFileWithAlbum)
 
     ```
     iex> {:ok, album_response} = WaifuVault.disassociate_file("some-valid-album-token", ["valid-file1". "valid-file2"])
@@ -207,6 +215,7 @@ defmodule WaifuVault do
   @doc """
     The share_album/2 function takes the album's private token and returns the public URL.
     Calling share_album/2 on an already-shared album will just return its token.
+    [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementShareAlbum)
 
     ```
     iex> {:ok, url} = WaifuVault.share_album("some-valid-album-token")
@@ -229,6 +238,7 @@ defmodule WaifuVault do
   @doc """
     The revoke_album/2 function disables public sharing.
     Note that future calls to share_album/2 will give it a new public token and new public URL.
+    [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementRevokeShare)
 
     ```
     iex> {:ok, album_response} = WaifuVault.revoke_album("some-valid-album-token")
@@ -247,8 +257,10 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The get_file/2 function retrieves the specified file. The password is ignored unless
-    the file is password-protected.
+    The get_file/2 function retrieves the contents of the specified file, which can be specified via URL or by token
+    (which is used to *look up* the URL).
+    The password, if passed, is ignored unless the file is password-protected.
+    [Swagger docs]()
 
     ```
     iex> {:ok, bitstring} = WaifuVault.get_file("some-valid-album-token", "some-password")
@@ -268,7 +280,7 @@ defmodule WaifuVault do
 
   def get_file(%{token: token}, _password) do
     with {:ok, map} = file_info(token),
-         {:ok, file_contents} = get_file(map) do
+         {:ok, file_contents} = get_file(map, map["password"]) do
       {:ok, file_contents}
     end
   end
@@ -290,6 +302,7 @@ defmodule WaifuVault do
 
   @doc """
     The file_info/2 function retrieves file metadata for the specified file token.
+    [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadGetInfo)
 
     ```
     iex> {:ok, map} = WaifuVault.file_info("some-valid-file-token")
@@ -309,6 +322,7 @@ defmodule WaifuVault do
 
   @doc """
     The get_restrictions/0 function returns restrictions for the current IP address.
+    [Swagger docs](https://waifuvault.moe/api-docs/#/Resource%20Management/resourceManagementGetRestrictions)
 
     ```
     iex> {:ok, restrictions} = WaifuVault.get_restrictions()
@@ -339,6 +353,7 @@ defmodule WaifuVault do
 
   @doc """
     The get_file_stats/0 function returns server limits for the current IP address.
+    [Swagger docs](https://waifuvault.moe/api-docs/#/Resource%20Management/resourceManagementStorage)
 
     ```
     iex> WaifuVault.get_file_stats
@@ -355,6 +370,15 @@ defmodule WaifuVault do
         handle_error(any_other_response)
     end
   end
+
+  # Should we ever implement:
+  # https://waifuvault.moe/api-docs/#/Album%20management/albumManagementGetPublicAlbum - but we already have the URL
+  # https://waifuvault.moe/api-docs/#/Album%20management/albumManagementDownloadFiles - but can get each file
+  # WE SHOULD:
+  # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry
+  # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry_1
+  # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadModifyEntry
+  # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadDeleteEntry
 
   @doc false
   def convert_to_atom_keys(map, atoms) do
