@@ -15,7 +15,7 @@ defmodule WaifuVault do
     ```
   """
 
-  import WaifuModels
+  #  import WaifuModels
   require Multipart
 
   # WE SHOULD IMPLEMENT:
