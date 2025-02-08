@@ -33,6 +33,7 @@ defmodule WaifuVault.MixProject do
     [
       {:req, "~> 0.5.8"},
       {:plug, "~> 1.0"},
+      {:multipart, "~> 0.4.0"},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false}
     ]
   end
