@@ -343,7 +343,7 @@ defmodule WaifuVault do
     ```
   """
   @doc group: "Files"
-  def upload_file_from_buffer(buffer, file_name, options) do
+  def upload_file_from_buffer(buffer, file_name, options \\ %{}) do
     multipart =
       Multipart.new()
       |> Multipart.add_part(
@@ -370,6 +370,26 @@ defmodule WaifuVault do
       {:ok, %Req.Response{status: 201, body: body}} ->
         IO.puts("New file stored successfully")
         {:ok, file_response_from_map(body)}
+
+      any_other_response ->
+        handle_error(any_other_response)
+    end
+  end
+
+  @doc """
+    Simplify the process of uploading a local file.
+
+    ```
+    iex> options = %{}
+    iex> {:ok, fileResponse} = WaifuVault.upload_local_file("./mix.exs", "my_mix.exs", options)
+    {:ok, %{...}}
+    ```
+  """
+  @doc group: "Files"
+  def upload_local_file(local_path, file_name, options \\ %{}) do
+    case File.read(local_path) do
+      {:ok, buffer} ->
+        upload_file_from_buffer(buffer, file_name, options)
 
       any_other_response ->
         handle_error(any_other_response)

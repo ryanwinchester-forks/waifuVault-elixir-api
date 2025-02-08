@@ -357,6 +357,32 @@ defmodule WaifuVaultTest do
     end
   end
 
+  describe "upload_file_from_buffer/3" do
+    test "uploads the buffer of data" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, @example_file_info)
+      end)
+
+      {:ok, map} = WaifuVault.upload_file_from_buffer("hello!", "world.txt")
+
+      refute is_nil(map)
+      assert map == @example_file_info
+    end
+  end
+
+  describe "upload_local_file/3" do
+    test "uploads the buffer of data" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, @example_file_info)
+      end)
+
+      {:ok, map} = WaifuVault.upload_local_file("./mix.exs", "my_mix.exs")
+
+      refute is_nil(map)
+      assert map == @example_file_info
+    end
+  end
+
   describe "get_restrictions/0" do
     test "response with plenty of space" do
       Req.Test.stub(WaifuVault, fn conn ->
