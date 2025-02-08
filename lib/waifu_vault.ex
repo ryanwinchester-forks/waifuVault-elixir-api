@@ -15,6 +15,18 @@ defmodule WaifuVault do
     ```
   """
 
+  import WaifuModels
+  require Multipart
+
+  # WE SHOULD IMPLEMENT:
+  # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry
+  # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry_1
+  # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadModifyEntry
+  # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadDeleteEntry
+  # Should we ever implement?
+  # https://waifuvault.moe/api-docs/#/Album%20management/albumManagementGetPublicAlbum - but we already have the URL
+  # https://waifuvault.moe/api-docs/#/Album%20management/albumManagementDownloadFiles - but can get each file
+
   # Ensure tests don't hit the real server by using Req.Test to intercept all HTTP calls
   # (note that there is *probably* a better way to do this)
   @request_options (Mix.env() == :test &&
@@ -321,6 +333,92 @@ defmodule WaifuVault do
   end
 
   @doc """
+    The upload_file_from_buffer/3 function posts the data to the server, returning a fileResponse map.
+    [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry)
+
+    ```
+    iex> {:ok, buffer} = File.read("some/local/file")
+    iex> {:ok, fileResponse} = WaifuVault.upload_file_from_buffer(buffer, "file.name", %{expires: "10m"})
+    {:ok, %{...}}
+    ```
+  """
+  @doc group: "Files"
+  def upload_file_from_buffer(buffer, file_name, options) do
+    multipart =
+      Multipart.new()
+      |> Multipart.add_part(
+        Multipart.Part.file_content_field(file_name, buffer, :file, filename: file_name)
+      )
+
+    content_length = Multipart.content_length(multipart)
+    content_type = Multipart.content_type(multipart, "multipart/form-data")
+
+    headers = [
+      {"Content-Type", content_type},
+      {"Content-Length", to_string(content_length)}
+    ]
+
+    case Req.put(@request_options,
+           url: "/#{options[:bucket_token]}",
+           headers: headers,
+           body: Multipart.body_stream(multipart)
+         ) do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        IO.puts("File already exists")
+        {:ok, file_response_from_map(body)}
+
+      {:ok, %Req.Response{status: 201, body: body}} ->
+        IO.puts("New file stored successfully")
+        {:ok, file_response_from_map(body)}
+
+      any_other_response ->
+        handle_error(any_other_response)
+    end
+  end
+
+  @doc """
+    For URL-based uploads:
+    ```
+    iex> file_upload_struct = WaifuModels.FileUpload.new_for_url("url", %{expires: "10m"})
+    iex> {:ok, fileResponse} = WaifuVault.upload_file(file_upload_struct)
+    {:ok, %{...}}
+    ```
+
+    For local file uploads:
+    ```
+    iex> options = %{}
+    iex> file_upload_struct = WaifuModels.FileUpload.new_for_local_file("local/path", options)
+    iex> {:ok, fileResponse} = WaifuVault.upload_file(file_upload_struct)
+    {:ok, %{...}}
+    ```
+  """
+  @doc group: "Files"
+  #  def upload_file(%WaifuModels.FileUpload{target_type: :local} = file_upload) do
+  #    {:ok, buffer} = File.read("some/local/file")
+  #
+  #    buffer_upload_struct =
+  #      WaifuModels.FileUpload.new_for_buffer(buffer, file_upload.target_name, file_upload)
+  #
+  #    upload_file(buffer_upload_struct)
+  #  end
+  #
+  #  def upload_file(%WaifuModels.FileUpload{target_type: :buffer} = file_upload) do
+  #    {:ok, buffer} = File.read("some/local/file")
+  #    buffer_upload_struct = WaifuModels.FileUpload.new_for_buffer(buffer, "file.name", file_upload)
+  #    upload_file(buffer_upload_struct)
+  #  end
+  #
+  #  def _upload_file(file_upload) do
+  #    case Req.put(@request_options, %{url: "/#{file_upload.bucket_token}"}) do
+  #      {:ok, %Req.Response{status: 200, body: body}} ->
+  #        {:ok, file_response_from_map(body)}
+  #
+  #      any_other_response ->
+  #        handle_error(any_other_response)
+  #    end
+  #  end
+
+  @doc """
     The get_restrictions/0 function returns restrictions for the current IP address.
     [Swagger docs](https://waifuvault.moe/api-docs/#/Resource%20Management/resourceManagementGetRestrictions)
 
@@ -370,15 +468,6 @@ defmodule WaifuVault do
         handle_error(any_other_response)
     end
   end
-
-  # Should we ever implement:
-  # https://waifuvault.moe/api-docs/#/Album%20management/albumManagementGetPublicAlbum - but we already have the URL
-  # https://waifuvault.moe/api-docs/#/Album%20management/albumManagementDownloadFiles - but can get each file
-  # WE SHOULD:
-  # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry
-  # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry_1
-  # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadModifyEntry
-  # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadDeleteEntry
 
   @doc false
   def convert_to_atom_keys(map, atoms) do
