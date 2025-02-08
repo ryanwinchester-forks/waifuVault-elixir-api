@@ -376,23 +376,23 @@ defmodule WaifuVault do
     end
   end
 
-  @doc """
-    For URL-based uploads:
-    ```
-    iex> file_upload_struct = WaifuModels.FileUpload.new_for_url("url", %{expires: "10m"})
-    iex> {:ok, fileResponse} = WaifuVault.upload_file(file_upload_struct)
-    {:ok, %{...}}
-    ```
-
-    For local file uploads:
-    ```
-    iex> options = %{}
-    iex> file_upload_struct = WaifuModels.FileUpload.new_for_local_file("local/path", options)
-    iex> {:ok, fileResponse} = WaifuVault.upload_file(file_upload_struct)
-    {:ok, %{...}}
-    ```
-  """
-  @doc group: "Files"
+  #  @doc """
+  #    For URL-based uploads:
+  #    ```
+  #    iex> file_upload_struct = WaifuModels.FileUpload.new_for_url("url", %{expires: "10m"})
+  #    iex> {:ok, fileResponse} = WaifuVault.upload_file(file_upload_struct)
+  #    {:ok, %{...}}
+  #    ```
+  #
+  #    For local file uploads:
+  #    ```
+  #    iex> options = %{}
+  #    iex> file_upload_struct = WaifuModels.FileUpload.new_for_local_file("local/path", options)
+  #    iex> {:ok, fileResponse} = WaifuVault.upload_file(file_upload_struct)
+  #    {:ok, %{...}}
+  #    ```
+  #  """
+  #  @doc group: "Files"
   #  def upload_file(%WaifuModels.FileUpload{target_type: :local} = file_upload) do
   #    {:ok, buffer} = File.read("some/local/file")
   #
