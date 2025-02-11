@@ -396,47 +396,33 @@ defmodule WaifuVault do
     end
   end
 
-  #  @doc """
-  #    For URL-based uploads:
-  #    ```
-  #    iex> file_upload_struct = WaifuModels.FileUpload.new_for_url("url", %{expires: "10m"})
-  #    iex> {:ok, fileResponse} = WaifuVault.upload_file(file_upload_struct)
-  #    {:ok, %{...}}
-  #    ```
-  #
-  #    For local file uploads:
-  #    ```
-  #    iex> options = %{}
-  #    iex> file_upload_struct = WaifuModels.FileUpload.new_for_local_file("local/path", options)
-  #    iex> {:ok, fileResponse} = WaifuVault.upload_file(file_upload_struct)
-  #    {:ok, %{...}}
-  #    ```
-  #  """
-  #  @doc group: "Files"
-  #  def upload_file(%WaifuModels.FileUpload{target_type: :local} = file_upload) do
-  #    {:ok, buffer} = File.read("some/local/file")
-  #
-  #    buffer_upload_struct =
-  #      WaifuModels.FileUpload.new_for_buffer(buffer, file_upload.target_name, file_upload)
-  #
-  #    upload_file(buffer_upload_struct)
-  #  end
-  #
-  #  def upload_file(%WaifuModels.FileUpload{target_type: :buffer} = file_upload) do
-  #    {:ok, buffer} = File.read("some/local/file")
-  #    buffer_upload_struct = WaifuModels.FileUpload.new_for_buffer(buffer, "file.name", file_upload)
-  #    upload_file(buffer_upload_struct)
-  #  end
-  #
-  #  def _upload_file(file_upload) do
-  #    case Req.put(@request_options, %{url: "/#{file_upload.bucket_token}"}) do
-  #      {:ok, %Req.Response{status: 200, body: body}} ->
-  #        {:ok, file_response_from_map(body)}
-  #
-  #      any_other_response ->
-  #        handle_error(any_other_response)
-  #    end
-  #  end
+  @doc """
+    Uploading a file specified via URL.
+
+    ```
+    iex> options = %{}
+    iex> {:ok, fileResponse} = WaifuVault.upload_via_url(image_url, options)
+    {:ok, %{...}}
+    ```
+  """
+  @doc group: "Files"
+  def upload_via_url(url, options \\ %{}) do
+    case Req.put(@request_options,
+           url: "/#{options[:bucket_token]}",
+           json: %{url: url}
+         ) do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        IO.puts("File already exists")
+        {:ok, file_response_from_map(body)}
+
+      {:ok, %Req.Response{status: 201, body: body}} ->
+        IO.puts("New file stored successfully")
+        {:ok, file_response_from_map(body)}
+
+      any_other_response ->
+        handle_error(any_other_response)
+    end
+  end
 
   @doc """
     The get_restrictions/0 function returns restrictions for the current IP address.

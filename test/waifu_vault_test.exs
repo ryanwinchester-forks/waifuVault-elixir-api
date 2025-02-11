@@ -383,6 +383,22 @@ defmodule WaifuVaultTest do
     end
   end
 
+  describe "upload_via_url/2" do
+    test "uploads the buffer of data" do
+      test_url =
+        "https://variety.com/wp-content/uploads/2020/01/taylor-swift-variety-cover-5-16x9-1000.jpg"
+
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, @example_file_info)
+      end)
+
+      {:ok, map} = WaifuVault.upload_via_url(test_url)
+
+      refute is_nil(map)
+      assert map == @example_file_info
+    end
+  end
+
   describe "get_restrictions/0" do
     test "response with plenty of space" do
       Req.Test.stub(WaifuVault, fn conn ->
