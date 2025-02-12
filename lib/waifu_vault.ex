@@ -37,6 +37,10 @@ defmodule WaifuVault do
 
   @restriction_keys [:type, :value]
   @file_info_keys [:recordCount, :recordSize]
+  @upload_status %{
+    200 => "File already exists",
+    201 => "New file stored successfully"
+  }
 
   @doc """
     Buckets are virtual collections that are linked to your IP and a token. When you create a bucket,
@@ -358,21 +362,58 @@ defmodule WaifuVault do
       {"Content-Length", to_string(content_length)}
     ]
 
-    case Req.put(@request_options,
-           url: "/#{options[:bucket_token]}",
-           headers: headers,
-           body: Multipart.body_stream(multipart)
-         ) do
-      {:ok, %Req.Response{status: 200, body: body}} ->
-        IO.puts("File already exists")
-        {:ok, file_response_from_map(body)}
-
-      {:ok, %Req.Response{status: 201, body: body}} ->
-        IO.puts("New file stored successfully")
-        {:ok, file_response_from_map(body)}
+    # Check our restrictions before attempting an upload
+    with {:get_restrictions, {:ok, restrictions}} <- {:get_restrictions, get_restrictions()},
+         :ok <- ok_size?(restrictions, byte_size(buffer)),
+         :ok <- mime_type_ok?(restrictions, file_name),
+         {:ok, %Req.Response{status: status, body: body}} <-
+           Req.put(@request_options,
+             url: "/#{options[:bucket_token]}",
+             headers: headers,
+             body: Multipart.body_stream(multipart)
+           ) do
+      IO.puts("Status #{status} means #{@upload_status[status] || "UNKNOWN"}")
+      {:ok, file_response_from_map(body)}
+    else
+      {:get_restrictions, error} ->
+        {:error, "Unable to get restrictions", error}
 
       any_other_response ->
         handle_error(any_other_response)
+    end
+  end
+
+  def ok_size?(restrictions, file_size) do
+    max_file_size =
+      Enum.find(restrictions, fn %{type: type, value: _value} -> type == "MAX_FILE_SIZE" end)
+
+    cond do
+      is_nil(max_file_size) || is_nil(max_file_size.value) ->
+        {:error, "Missing MAX_FILE_SIZE restriction"}
+
+      max_file_size.value < file_size ->
+        {:error, "File size #{file_size} is larger than max allowed #{max_file_size.value}"}
+
+      true ->
+        :ok
+    end
+  end
+
+  def mime_type_ok?(restrictions, file_name) do
+    mime_type = MIME.from_path(file_name)
+
+    banned_entry =
+      Enum.find(restrictions, fn %{type: type, value: _value} -> type == "BANNED_MIME_TYPE" end)
+
+    cond do
+      is_nil(banned_entry) || is_nil(banned_entry.value) ->
+        {:error, "Missing BANNED_MIME_TYPE restriction"}
+
+      String.contains?(banned_entry.value, mime_type) ->
+        {:error, "File MIME type #{mime_type} is not allowed for upload"}
+
+      true ->
+        :ok
     end
   end
 
@@ -397,7 +438,8 @@ defmodule WaifuVault do
   end
 
   @doc """
-    Uploading a file specified via URL.
+    Uploading a file specified via URL. Setting the :bucket option will place the file
+    in the specified bucket (assuming it exists).
 
     ```
     iex> options = %{}
@@ -407,6 +449,7 @@ defmodule WaifuVault do
   """
   @doc group: "Files"
   def upload_via_url(url, options \\ %{}) do
+    # no restrictions check - let the server do it.
     case Req.put(@request_options,
            url: "/#{options[:bucket_token]}",
            json: %{url: url}

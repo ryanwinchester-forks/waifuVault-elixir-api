@@ -106,7 +106,7 @@ defmodule WaifuVaultTest do
     token: @example_album_token
   }
   @restrictions_response [
-    %{type: "MAX_FILE_SIZE", value: 100},
+    %{type: "MAX_FILE_SIZE", value: 10_000},
     %{type: "BANNED_MIME_TYPE", value: "application/x-msdownload,application/x-executable"}
   ]
 
@@ -359,9 +359,16 @@ defmodule WaifuVaultTest do
 
   describe "upload_file_from_buffer/3" do
     test "uploads the buffer of data" do
-      Req.Test.stub(WaifuVault, fn conn ->
-        Req.Test.json(conn, @example_file_info)
-      end)
+      # It should make 2 requests: one for restrictions and one for the upload
+      Req.Test.expect(
+        WaifuVault,
+        &Req.Test.json(&1, @restrictions_response)
+      )
+
+      Req.Test.expect(
+        WaifuVault,
+        &Req.Test.json(&1, @example_file_info)
+      )
 
       {:ok, map} = WaifuVault.upload_file_from_buffer("hello!", "world.txt")
 
@@ -372,10 +379,18 @@ defmodule WaifuVaultTest do
 
   describe "upload_local_file/3" do
     test "uploads the buffer of data" do
-      Req.Test.stub(WaifuVault, fn conn ->
-        Req.Test.json(conn, @example_file_info)
-      end)
+      # It should make 2 requests: one for restrictions and one for the upload
+      Req.Test.expect(
+        WaifuVault,
+        &Req.Test.json(&1, @restrictions_response)
+      )
 
+      Req.Test.expect(
+        WaifuVault,
+        &Req.Test.json(&1, @example_file_info)
+      )
+
+      # Note: mix.exs is expected to be smaller than the @restrictions_response MAX_FILE_SIZE
       {:ok, map} = WaifuVault.upload_local_file("./mix.exs", "my_mix.exs")
 
       refute is_nil(map)
