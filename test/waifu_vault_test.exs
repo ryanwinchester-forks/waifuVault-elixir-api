@@ -105,9 +105,14 @@ defmodule WaifuVaultTest do
     publicToken: nil,
     token: @example_album_token
   }
+  @test_max_file_size 10_000
   @restrictions_response [
-    %{type: "MAX_FILE_SIZE", value: 10_000},
-    %{type: "BANNED_MIME_TYPE", value: "application/x-msdownload,application/x-executable"}
+    %{type: "MAX_FILE_SIZE", value: @test_max_file_size},
+    %{
+      type: "BANNED_MIME_TYPE",
+      value:
+        "application/x-dosexec,application/x-executable,application/x-hdf5,application/x-java-archive,application/vnd.rar"
+    }
   ]
 
   @file_stats_response %{recordCount: 1420, recordSize: "1.92 GiB"}
@@ -411,6 +416,60 @@ defmodule WaifuVaultTest do
 
       refute is_nil(map)
       assert map == @example_file_info
+    end
+  end
+
+  describe "upload_url/1" do
+    test "adds options as URL params" do
+      assert String.starts_with?(WaifuVault.upload_url(%{bucket_token: "aaabbb"}), "/aaabbb")
+      assert String.contains?(WaifuVault.upload_url(%{expires: "5m"}), "expires=5m")
+
+      assert String.contains?(
+               WaifuVault.upload_url(%{one_time_download: true}),
+               "oneTimeDownload=true"
+             )
+
+      assert String.contains?(WaifuVault.upload_url(%{hide_filename: true}), "hide_filename=true")
+      assert String.starts_with?(WaifuVault.upload_url(%{expires: "3d"}), "/?")
+
+      assert String.contains?(
+               WaifuVault.upload_url(%{one_time_download: 343}),
+               "oneTimeDownload=false"
+             )
+
+      assert String.contains?(
+               WaifuVault.upload_url(%{hide_filename: "yellow"}),
+               "hide_filename=false"
+             )
+    end
+  end
+
+  describe "ok_size?/2" do
+    test "returns :ok when MAX_FILE_SIZE at least as large as needed" do
+      assert :ok == WaifuVault.ok_size?(@restrictions_response, @test_max_file_size - 1)
+      assert :ok == WaifuVault.ok_size?(@restrictions_response, @test_max_file_size)
+    end
+
+    test "returns :error when MAX_FILE_SIZE is smaller than needed" do
+      assert {:error, _} = WaifuVault.ok_size?(@restrictions_response, @test_max_file_size + 1)
+    end
+
+    test "returns :error when MAX_FILE_SIZE is missing" do
+      assert {:error, _} = WaifuVault.ok_size?([], 1)
+    end
+  end
+
+  describe "mime_type_ok?/2" do
+    test "returns :ok when BANNED_MIME_TYPE does not include file's mime type" do
+      assert :ok == WaifuVault.mime_type_ok?(@restrictions_response, "some_file.jpg")
+    end
+
+    test "returns :error when BANNED_MIME_TYPE includes file's mime type" do
+      assert {:error, _} = WaifuVault.mime_type_ok?(@restrictions_response, "some_file.rar")
+    end
+
+    test "returns :error when BANNED_MIME_TYPE is missing" do
+      assert {:error, _} = WaifuVault.mime_type_ok?([], "some_file.txt")
     end
   end
 

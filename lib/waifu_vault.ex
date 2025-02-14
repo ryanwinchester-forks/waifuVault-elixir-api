@@ -351,7 +351,14 @@ defmodule WaifuVault do
     multipart =
       Multipart.new()
       |> Multipart.add_part(
-        Multipart.Part.file_content_field(file_name, buffer, :file, filename: file_name)
+        if is_nil(options[:password]) do
+          Multipart.Part.file_content_field(file_name, buffer, :file, filename: file_name)
+        else
+          Multipart.Part.file_content_field(file_name, buffer, :file,
+            filename: file_name,
+            password: options[:password]
+          )
+        end
       )
 
     content_length = Multipart.content_length(multipart)
@@ -368,7 +375,7 @@ defmodule WaifuVault do
          :ok <- mime_type_ok?(restrictions, file_name),
          {:ok, %Req.Response{status: status, body: body}} <-
            Req.put(@request_options,
-             url: "/#{options[:bucket_token]}",
+             url: upload_url(options),
              headers: headers,
              body: Multipart.body_stream(multipart)
            ) do
@@ -380,40 +387,6 @@ defmodule WaifuVault do
 
       any_other_response ->
         handle_error(any_other_response)
-    end
-  end
-
-  def ok_size?(restrictions, file_size) do
-    max_file_size =
-      Enum.find(restrictions, fn %{type: type, value: _value} -> type == "MAX_FILE_SIZE" end)
-
-    cond do
-      is_nil(max_file_size) || is_nil(max_file_size.value) ->
-        {:error, "Missing MAX_FILE_SIZE restriction"}
-
-      max_file_size.value < file_size ->
-        {:error, "File size #{file_size} is larger than max allowed #{max_file_size.value}"}
-
-      true ->
-        :ok
-    end
-  end
-
-  def mime_type_ok?(restrictions, file_name) do
-    mime_type = MIME.from_path(file_name)
-
-    banned_entry =
-      Enum.find(restrictions, fn %{type: type, value: _value} -> type == "BANNED_MIME_TYPE" end)
-
-    cond do
-      is_nil(banned_entry) || is_nil(banned_entry.value) ->
-        {:error, "Missing BANNED_MIME_TYPE restriction"}
-
-      String.contains?(banned_entry.value, mime_type) ->
-        {:error, "File MIME type #{mime_type} is not allowed for upload"}
-
-      true ->
-        :ok
     end
   end
 
@@ -451,7 +424,7 @@ defmodule WaifuVault do
   def upload_via_url(url, options \\ %{}) do
     # no restrictions check - let the server do it.
     case Req.put(@request_options,
-           url: "/#{options[:bucket_token]}",
+           url: upload_url(options),
            json: %{url: url}
          ) do
       {:ok, %Req.Response{status: 200, body: body}} ->
@@ -464,6 +437,57 @@ defmodule WaifuVault do
 
       any_other_response ->
         handle_error(any_other_response)
+    end
+  end
+
+  def upload_url(options) do
+    # NOTE: there are known inconsistencies between the snake-case "hide_filename"
+    # and camel-case "oneTimeDownload" - but the options hash is snake-case.
+    expires = (is_nil(options[:expires]) && "") || "expires=#{options[:expires]}&"
+
+    hide_filename =
+      (is_nil(options[:hide_filename]) && "") ||
+        "hide_filename=#{options[:hide_filename] == true}&"
+
+    oneTimeDownload =
+      (is_nil(options[:one_time_download]) && "") ||
+        "oneTimeDownload=#{options[:one_time_download] == true}"
+
+    "/#{options[:bucket_token]}?#{expires}#{hide_filename}#{oneTimeDownload}"
+    |> IO.inspect(label: "upload_url")
+  end
+
+  def ok_size?(restrictions, file_size) do
+    max_file_size =
+      Enum.find(restrictions, fn %{type: type, value: _value} -> type == "MAX_FILE_SIZE" end)
+
+    cond do
+      is_nil(max_file_size) || is_nil(max_file_size.value) ->
+        {:error, "Missing MAX_FILE_SIZE restriction"}
+
+      max_file_size.value < file_size ->
+        {:error, "File size #{file_size} is larger than max allowed #{max_file_size.value}"}
+
+      true ->
+        :ok
+    end
+  end
+
+  def mime_type_ok?(restrictions, file_name) do
+    mime_type = MIME.from_path(file_name)
+
+    banned_entry =
+      Enum.find(restrictions, fn %{type: type, value: _value} -> type == "BANNED_MIME_TYPE" end)
+
+    cond do
+      is_nil(banned_entry) || is_nil(banned_entry.value) ->
+        {:error, "Missing BANNED_MIME_TYPE restriction"}
+
+      String.contains?(banned_entry.value, mime_type) ->
+        {:error, "File MIME type #{mime_type} is not allowed for upload"}
+
+      true ->
+        :ok
     end
   end
 
