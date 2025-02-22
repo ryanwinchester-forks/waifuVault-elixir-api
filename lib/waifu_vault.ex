@@ -339,6 +339,7 @@ defmodule WaifuVault do
   @doc """
     The upload_file_from_buffer/3 function posts the data to the server, returning a fileResponse map.
     [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry)
+    [and parallel Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry_1)
 
     ```
     iex> {:ok, buffer} = File.read("some/local/file")
@@ -349,17 +350,18 @@ defmodule WaifuVault do
   @doc group: "Files"
   def upload_file_from_buffer(buffer, file_name, options \\ %{}) do
     multipart =
-      Multipart.new()
-      |> Multipart.add_part(
-        if is_nil(options[:password]) do
+      if is_nil(options[:password]) do
+        Multipart.new()
+        |> Multipart.add_part(
           Multipart.Part.file_content_field(file_name, buffer, :file, filename: file_name)
-        else
-          Multipart.Part.file_content_field(file_name, buffer, :file,
-            filename: file_name,
-            password: options[:password]
-          )
-        end
-      )
+        )
+      else
+        Multipart.new()
+        |> Multipart.add_part(
+          Multipart.Part.file_content_field(file_name, buffer, :file, filename: file_name)
+        )
+        |> Multipart.add_part(Multipart.Part.text_field(options[:password], :password))
+      end
 
     content_length = Multipart.content_length(multipart)
     content_type = Multipart.content_type(multipart, "multipart/form-data")
@@ -376,6 +378,7 @@ defmodule WaifuVault do
          {:ok, %Req.Response{status: status, body: body}} <-
            Req.put(@request_options,
              url: upload_url(options),
+             #             json: (is_nil(options[:password]) && %{} || %{password: options[:password]}),
              headers: headers,
              body: Multipart.body_stream(multipart)
            ) do
@@ -422,10 +425,17 @@ defmodule WaifuVault do
   """
   @doc group: "Files"
   def upload_via_url(url, options \\ %{}) do
+    json_data =
+      if is_nil(options[:password]) do
+        %{url: url}
+      else
+        %{url: url, password: options[:password]}
+      end
+
     # no restrictions check - let the server do it.
     case Req.put(@request_options,
            url: upload_url(options),
-           json: %{url: url}
+           json: json_data
          ) do
       {:ok, %Req.Response{status: 200, body: body}} ->
         IO.puts("File already exists")
@@ -454,7 +464,7 @@ defmodule WaifuVault do
         "oneTimeDownload=#{options[:one_time_download] == true}"
 
     "/#{options[:bucket_token]}?#{expires}#{hide_filename}#{oneTimeDownload}"
-    |> IO.inspect(label: "upload_url")
+    # |> IO.inspect(label: "upload_url")
   end
 
   def ok_size?(restrictions, file_size) do
@@ -488,6 +498,27 @@ defmodule WaifuVault do
 
       true ->
         :ok
+    end
+  end
+
+  @doc """
+    The get_restrictions/0 function returns restrictions for the current IP address.
+    [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadDeleteEntry)
+
+    ```
+    iex> {:ok, true} = WaifuVault.delete_file(file_token)
+    {:ok, true}
+    ```
+  """
+  @doc group: "Files"
+  def delete_file(file_token) do
+    case Req.delete(@request_options, url: "/#{file_token}") do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        IO.inspect(body, label: "raw delete response")
+        {:ok, body}
+
+      any_other_response ->
+        handle_error(any_other_response)
     end
   end
 
@@ -639,7 +670,7 @@ defmodule WaifuVault do
     %{
       hideFilename: map["hideFilename"] || false,
       oneTimeDownload: map["oneTimeDownload"] || false,
-      protected: map["oneTimeDownload"] || false
+      protected: map["protected"] || false
     }
   end
 end

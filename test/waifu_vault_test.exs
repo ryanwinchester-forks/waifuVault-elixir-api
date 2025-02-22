@@ -473,6 +473,36 @@ defmodule WaifuVaultTest do
     end
   end
 
+  describe "delete_file/1" do
+    test "returns true on successful deletion" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, true)
+      end)
+
+      {:ok, response} = WaifuVault.delete_file("valid-token")
+
+      assert response == true
+    end
+
+    test "returns error for unknown file token" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Plug.Conn.send_resp(
+          conn,
+          400,
+          Jason.encode_to_iodata!(%{
+            "status" => "400",
+            "name" => "BAD_REQUEST",
+            "message" => "Unknown token invalid-token"
+          })
+        )
+      end)
+
+      {:error, response} = WaifuVault.delete_file("invalid-token")
+
+      assert response == "Error 400 (BAD_REQUEST): Unknown token invalid-token"
+    end
+  end
+
   describe "get_restrictions/0" do
     test "response with plenty of space" do
       Req.Test.stub(WaifuVault, fn conn ->
