@@ -4,7 +4,7 @@ defmodule WaifuVault.MixProject do
   def project do
     [
       app: :waifu_vault,
-      version: "0.0.3",
+      version: "0.0.4",
       elixir: "~> 1.16",
       description: "API wrapper for https://waifuvault.moe/",
       package: %{

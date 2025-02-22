@@ -5,7 +5,7 @@ defmodule WaifuVault do
     To include in your project:
     ```
     # In your mix.exs deps/0 function
-    {:waifu_vault, "~> 0.0.3"}
+    {:waifu_vault, "~> 0.0.4"}
     ```
 
     To Use:
@@ -22,7 +22,6 @@ defmodule WaifuVault do
   # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry
   # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry_1
   # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadModifyEntry
-  # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadDeleteEntry
   # Should we ever implement?
   # https://waifuvault.moe/api-docs/#/Album%20management/albumManagementGetPublicAlbum - but we already have the URL
   # https://waifuvault.moe/api-docs/#/Album%20management/albumManagementDownloadFiles - but can get each file
@@ -394,7 +393,10 @@ defmodule WaifuVault do
   end
 
   @doc """
-    Simplify the process of uploading a local file.
+    The upload_local_file/3 function simplifies the process of uploading a local file with a simple
+    wrapper around upload_file_from_buffer/3. It posts the data to the server, returning a fileResponse map.
+    [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry)
+    [and parallel Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry_1)
 
     ```
     iex> options = %{}
@@ -450,6 +452,7 @@ defmodule WaifuVault do
     end
   end
 
+  @doc false
   def upload_url(options) do
     # NOTE: there are known inconsistencies between the snake-case "hide_filename"
     # and camel-case "oneTimeDownload" - but the options hash is snake-case.
@@ -467,6 +470,7 @@ defmodule WaifuVault do
     # |> IO.inspect(label: "upload_url")
   end
 
+  @doc false
   def ok_size?(restrictions, file_size) do
     max_file_size =
       Enum.find(restrictions, fn %{type: type, value: _value} -> type == "MAX_FILE_SIZE" end)
@@ -483,6 +487,7 @@ defmodule WaifuVault do
     end
   end
 
+  @doc false
   def mime_type_ok?(restrictions, file_name) do
     mime_type = MIME.from_path(file_name)
 
@@ -502,7 +507,7 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The get_restrictions/0 function returns restrictions for the current IP address.
+    The delete_file/1 function returns `{:ok, true}` for a successful deletion.
     [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadDeleteEntry)
 
     ```
