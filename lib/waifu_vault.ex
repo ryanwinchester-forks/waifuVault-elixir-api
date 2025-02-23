@@ -18,10 +18,6 @@ defmodule WaifuVault do
   #  import WaifuModels
   require Multipart
 
-  # Should we ever implement?
-  # https://waifuvault.moe/api-docs/#/Album%20management/albumManagementGetPublicAlbum - but we already have the URL
-  # https://waifuvault.moe/api-docs/#/Album%20management/albumManagementDownloadFiles - but can get each file
-
   # Ensure tests don't hit the real server by using Req.Test to intercept all HTTP calls
   # (note that there is *probably* a better way to do this)
   @request_options (Mix.env() == :test &&
@@ -225,7 +221,7 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The share_album/2 function takes the album's private token and returns the public URL.
+    The share_album/1 function takes the album's private token and returns the public URL.
     Calling share_album/2 on an already-shared album will just return its token.
     [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementShareAlbum)
 
@@ -248,7 +244,7 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The revoke_album/2 function disables public sharing.
+    The revoke_album/1 function disables public sharing.
     Note that future calls to share_album/2 will give it a new public token and new public URL.
     [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementRevokeShare)
 
@@ -265,6 +261,40 @@ defmodule WaifuVault do
 
       any_other_response ->
         handle_error(any_other_response)
+    end
+  end
+
+  @doc """
+    The download_album/2 function fetches a zip file containing either the whole album, or specified files.
+    [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementDownloadFiles)
+
+    ```
+    iex> {:ok, zip_data} = WaifuVault.download_album("some-valid-album-token", ["file.jpg", "file2.jpg"])
+    {:ok, zip_data}
+    ```
+  """
+  @doc group: "Albums"
+  def download_album(album_token, file_names \\ []) do
+    case Req.post(@request_options,
+           url: "/album/download/#{album_token}",
+           json: file_names,
+           into: :self
+         )
+         |> IO.inspect(label: "\nraw") do
+      {:ok, %Req.Response{status: 200, body: _body} = response} ->
+        zip_data = Enum.reduce(response.body, "", fn stream, acc -> acc <> stream end)
+
+        file_name =
+          Req.Response.get_header(response, "content-disposition")
+          |> List.first()
+          |> String.split("\"")
+          |> Enum.slice(-2, 1)
+          |> List.first()
+
+        {:ok, file_name, zip_data}
+
+      any_other_response ->
+        handle_error(any_other_response, true)
     end
   end
 
@@ -308,7 +338,7 @@ defmodule WaifuVault do
         {:ok, body}
 
       any_other_response ->
-        handle_error(any_other_response)
+        handle_error(any_other_response, true)
     end
   end
 
@@ -617,6 +647,13 @@ defmodule WaifuVault do
   # Handle errors similarly to the Python API
   @doc false
   def handle_error(req_response, is_download \\ false)
+
+  def handle_error({_, %Req.Response{body: %Req.Response.Async{} = async}}, true) do
+    body = Enum.reduce(async, "", fn stream, acc -> acc <> stream end)
+    IO.inspect(body, label: "handle_error async body")
+
+    {:error, body}
+  end
 
   def handle_error({_, %Req.Response{status: 403}}, true) do
     {:error, "Error 403 (Password is Incorrect): Password is Incorrect"}
