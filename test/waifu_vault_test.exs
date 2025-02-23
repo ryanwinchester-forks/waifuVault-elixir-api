@@ -473,6 +473,19 @@ defmodule WaifuVaultTest do
     end
   end
 
+  describe "update_file/2" do
+    test "returns file response" do
+      Req.Test.stub(WaifuVault, fn conn ->
+        Req.Test.json(conn, @example_file_info)
+      end)
+
+      {:ok, map} = WaifuVault.update_file("some-file-token", %{})
+
+      refute is_nil(map)
+      assert map == @example_file_info
+    end
+  end
+
   describe "delete_file/1" do
     test "returns true on successful deletion" do
       Req.Test.stub(WaifuVault, fn conn ->

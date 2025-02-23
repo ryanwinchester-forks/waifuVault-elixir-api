@@ -18,10 +18,6 @@ defmodule WaifuVault do
   #  import WaifuModels
   require Multipart
 
-  # WE SHOULD IMPLEMENT:
-  # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry
-  # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry_1
-  # https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadModifyEntry
   # Should we ever implement?
   # https://waifuvault.moe/api-docs/#/Album%20management/albumManagementGetPublicAlbum - but we already have the URL
   # https://waifuvault.moe/api-docs/#/Album%20management/albumManagementDownloadFiles - but can get each file
@@ -40,6 +36,7 @@ defmodule WaifuVault do
     200 => "File already exists",
     201 => "New file stored successfully"
   }
+  @file_update_keys [:password, :previousPassword, :customExpiry, :hideFilename]
 
   @doc """
     Buckets are virtual collections that are linked to your IP and a token. When you create a bucket,
@@ -418,6 +415,8 @@ defmodule WaifuVault do
   @doc """
     Uploading a file specified via URL. Setting the :bucket option will place the file
     in the specified bucket (assuming it exists).
+    [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry)
+    [and parallel Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry_1)
 
     ```
     iex> options = %{}
@@ -467,7 +466,6 @@ defmodule WaifuVault do
         "oneTimeDownload=#{options[:one_time_download] == true}"
 
     "/#{options[:bucket_token]}?#{expires}#{hide_filename}#{oneTimeDownload}"
-    # |> IO.inspect(label: "upload_url")
   end
 
   @doc false
@@ -503,6 +501,30 @@ defmodule WaifuVault do
 
       true ->
         :ok
+    end
+  end
+
+  @doc """
+    The update_file/2 function returns `{:ok, file_data}` for a successful update.
+    [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadModifyEntry)
+
+    ```
+    iex> {:ok, true} = WaifuVault.update_file(file_token, %{...})
+    {:ok, true}
+    ```
+  """
+  @doc group: "Files"
+  def update_file(file_token, options) do
+    json_data =
+      Enum.filter(options, fn {key, _value} -> key in @file_update_keys end)
+      |> Map.new()
+
+    case Req.patch(@request_options, url: "/#{file_token}", json: json_data) do
+      {:ok, %Req.Response{status: 200, body: body}} ->
+        {:ok, file_response_from_map(body)}
+
+      any_other_response ->
+        handle_error(any_other_response)
     end
   end
 
