@@ -5,7 +5,7 @@ defmodule WaifuVault do
     To include in your project:
     ```
     # In your mix.exs deps/0 function
-    {:waifu_vault, "~> 0.0.4"}
+    {:waifu_vault, "~> 1.0.0"}
     ```
 
     To Use:
@@ -36,7 +36,7 @@ defmodule WaifuVault do
 
   @doc """
     Buckets are virtual collections that are linked to your IP and a token. When you create a bucket,
-    you will receive a bucket token that you can use in Get Bucket to get all the files in that bucket.
+    you will receive a bucket token that you can use in get_bucket/1 to get all the files in that bucket.
     Later calls to create_bucket/0 will return the same token as long as your IP address doesn't change.
     [Swagger docs](https://waifuvault.moe/api-docs/#/Bucket%20Management/bucketManagementCreateBucket)
 
@@ -82,10 +82,10 @@ defmodule WaifuVault do
     The get_bucket/1 function returns the list of files and albums contained in a bucket.
     The bucket has a `dateCreated` value that can be converted
     with `DateTime.from_unix( dateCreated, :millisecond)`
+    [Swagger docs](https://waifuvault.moe/api-docs/#/Bucket%20Management/bucketManagementGetBucket)
 
     Individual files have a `retentionPeriod` which is the UNIX timestamp in milliseconds for when the
     file will expire. It can be converted with `DateTime.from_unix( retentionPeriod, :millisecond)`
-    [Swagger docs](https://waifuvault.moe/api-docs/#/Bucket%20Management/bucketManagementGetBucket)
 
     ```
     iex> {:ok, boolean} = WaifuVault.get_bucket("some-valid-uuid-token")
@@ -222,7 +222,7 @@ defmodule WaifuVault do
 
   @doc """
     The share_album/1 function takes the album's private token and returns the public URL.
-    Calling share_album/2 on an already-shared album will just return its token.
+    Calling share_album/1 on an already-shared album will just return its token.
     [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementShareAlbum)
 
     ```
@@ -245,7 +245,7 @@ defmodule WaifuVault do
 
   @doc """
     The revoke_album/1 function disables public sharing.
-    Note that future calls to share_album/2 will give it a new public token and new public URL.
+    Note that future calls to share_album/1 will give it a new public token and new public URL.
     [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementRevokeShare)
 
     ```
@@ -302,7 +302,7 @@ defmodule WaifuVault do
     The get_file/2 function retrieves the contents of the specified file, which can be specified via URL or by token
     (which is used to *look up* the URL).
     The password, if passed, is ignored unless the file is password-protected.
-    [Swagger docs]()
+    [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadGetInfo)
 
     ```
     iex> {:ok, bitstring} = WaifuVault.get_file("some-valid-album-token", "some-password")

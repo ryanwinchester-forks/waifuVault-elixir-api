@@ -11,7 +11,7 @@ by adding `waifu_vault` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:waifu_vault, "~> 0.0.4"}
+    {:waifu_vault, "~> 1.0.0"}
   ]
 end
 ```
