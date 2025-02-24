@@ -27,3 +27,6 @@ waifu_vault-*.tar
 
 /junk
 /.idea
+
+# Why does Apple create these?
+.DS_Store
