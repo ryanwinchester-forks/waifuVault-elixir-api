@@ -19,12 +19,7 @@ defmodule WaifuVault do
   require Multipart
 
   # Ensure tests don't hit the real server by using Req.Test to intercept all HTTP calls
-  # (note that there is *probably* a better way to do this)
-  @request_options (Mix.env() == :test &&
-                      Req.new(
-                        base_url: "https://example.com/rest",
-                        plug: {Req.Test, WaifuVault}
-                      )) || Req.new(base_url: "https://waifuvault.moe/rest")
+  @request_options Req.new(Application.compile_env!(:waifu_vault, __MODULE__))
 
   @restriction_keys [:type, :value]
   @file_info_keys [:recordCount, :recordSize]
