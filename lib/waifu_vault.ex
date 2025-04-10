@@ -1,24 +1,25 @@
 defmodule WaifuVault do
   @moduledoc """
-    This API wrapper is meant to conform to the [WaifuVault Swagger docs](https://waifuvault.moe/api-docs/).
+  This API wrapper is meant to conform to the [WaifuVault Swagger docs](https://waifuvault.moe/api-docs/).
 
-    To include in your project:
-    ```
-    # In your mix.exs deps/0 function
-    {:waifu_vault, "~> 1.0.0"}
-    ```
+  ### To include in your project:
 
-    To Use:
-    ```
-    # In your_file.ex
-    require WaifuVault
-    ```
+  In your mix.exs deps/0 function
+
+      {:waifu_vault, "~> 1.0.0"}
+
+
+  ### To Use:
+
+  In your_file.ex
+
+      require WaifuVault
+
   """
 
-  #  import WaifuModels
+  require Logger
   require Multipart
 
-  # Ensure tests don't hit the real server by using Req.Test to intercept all HTTP calls
   @request_options Req.new(Application.compile_env!(:waifu_vault, __MODULE__))
 
   @restriction_keys [:type, :value]
@@ -30,15 +31,18 @@ defmodule WaifuVault do
   @file_update_keys [:password, :previousPassword, :customExpiry, :hideFilename]
 
   @doc """
-    Buckets are virtual collections that are linked to your IP and a token. When you create a bucket,
-    you will receive a bucket token that you can use in get_bucket/1 to get all the files in that bucket.
-    Later calls to create_bucket/0 will return the same token as long as your IP address doesn't change.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/Bucket%20Management/bucketManagementCreateBucket)
+  Creates a bucket.
 
-    ```
-    iex> {:ok, bucket} = WaifuVault.create_bucket()
-    {:ok, "some-uuid-type-value"}
-    ```
+  Buckets are virtual collections that are linked to your IP and a token. When you create a bucket,
+  you will receive a bucket token that you can use in get_bucket/1 to get all the files in that bucket.
+  Later calls to create_bucket/0 will return the same token as long as your IP address doesn't change.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/Bucket%20Management/bucketManagementCreateBucket)
+
+  ## Examples
+
+      iex> {:ok, bucket} = WaifuVault.create_bucket()
+      {:ok, "some-uuid-type-value"}
+
   """
   @doc group: "Buckets"
   def create_bucket() do
@@ -52,15 +56,16 @@ defmodule WaifuVault do
   end
 
   @doc """
-    Deleting a bucket will delete the bucket and all the files it contains.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/Bucket%20Management/bucketManagementDeleteBucket)
+  Deleting a bucket will delete the bucket and all the files it contains.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/Bucket%20Management/bucketManagementDeleteBucket)
 
-    IMPORTANT: All contained files will be DELETED along with the Bucket!
+  IMPORTANT: All contained files will be DELETED along with the Bucket!
 
-    ```
-    iex> {:ok, boolean} = WaifuVault.delete_bucket("some-valid-uuid-token")
-    {:ok, true}
-    ```
+  ## Examples
+
+      iex> {:ok, boolean} = WaifuVault.delete_bucket("some-valid-uuid-token")
+      {:ok, true}
+
   """
   @doc group: "Buckets"
   def delete_bucket(token) do
@@ -74,18 +79,20 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The get_bucket/1 function returns the list of files and albums contained in a bucket.
-    The bucket has a `dateCreated` value that can be converted
-    with `DateTime.from_unix( dateCreated, :millisecond)`
-    [Swagger docs](https://waifuvault.moe/api-docs/#/Bucket%20Management/bucketManagementGetBucket)
+  Returns the list of files and albums contained in a bucket.
 
-    Individual files have a `retentionPeriod` which is the UNIX timestamp in milliseconds for when the
-    file will expire. It can be converted with `DateTime.from_unix( retentionPeriod, :millisecond)`
+  The bucket has a `dateCreated` value that can be converted
+  with `DateTime.from_unix( dateCreated, :millisecond)`
+  [Swagger docs](https://waifuvault.moe/api-docs/#/Bucket%20Management/bucketManagementGetBucket)
 
-    ```
-    iex> {:ok, boolean} = WaifuVault.get_bucket("some-valid-uuid-token")
-    {:ok, Map}
-    ```
+  Individual files have a `retentionPeriod` which is the UNIX timestamp in milliseconds for when the
+  file will expire. It can be converted with `DateTime.from_unix( retentionPeriod, :millisecond)`
+
+  ## Examples
+
+      iex> WaifuVault.get_bucket("some-valid-uuid-token")
+      {:ok, %{...}}
+
   """
   @doc group: "Buckets"
   def get_bucket(token) do
@@ -99,13 +106,14 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The create_album/2 function creates an album within the specified bucket.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementCreateAlbum)
+  Creates an album within the specified bucket.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementCreateAlbum)
 
-    ```
-    iex> {:ok, album} = WaifuVault.create_album("some-bucket-token", "album-name")
+  ## Examples
+    
+    iex> WaifuVault.create_album("some-bucket-token", "album-name")
     {:ok, Map}
-    ```
+   
   """
   @doc group: "Albums"
   def create_album(bucket_token, album_name) do
@@ -119,19 +127,19 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The delete_album/2 function removes the specified album.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementDeleteAlbum)
+  Removes the specified album.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementDeleteAlbum)
 
-    ```
-    # First deletion attempt
-    iex> WaifuVault.delete_album("album-token")
-    {:ok, %{"description" => "album deleted", "success" => true}}
+  ## Examples
 
-    # Attempt a second deletion
-    iex> WaifuVault.delete_album("album-token")
-    {:error,
-    "Error 400 (BAD_REQUEST): Album with token album-token not found"}
-    ```
+      # First deletion attempt
+      iex> WaifuVault.delete_album("album-token")
+      {:ok, %{"description" => "album deleted", "success" => true}}
+
+      # Attempt a second deletion
+      iex> WaifuVault.delete_album("album-token")
+      {:error, "Error 400 (BAD_REQUEST): Album with token album-token not found"}
+
   """
   @doc group: "Albums"
   def delete_album(album_token, delete_files \\ false) do
@@ -147,13 +155,12 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The get_album/1 function returns album info, given the private token.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementGetAlbum)
+  Get album info, given the private token.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementGetAlbum)
 
-    ```
-    iex> {:ok, album_response} = WaifuVault.get_album("some-valid-album-token")
-    {:ok, Map}
-    ```
+      iex> WaifuVault.get_album("some-valid-album-token")
+      {:ok, %{...}}
+
   """
   @doc group: "Albums"
   def get_album(album_token) do
@@ -168,13 +175,14 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The associate_file/2 function connects one or more files to an album.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementAssociateFileWithAlbum)
+  Connects one or more files to an album.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementAssociateFileWithAlbum)
 
-    ```
-    iex> {:ok, album_response} = WaifuVault.associate_file("some-valid-album-token", ["valid-file1". "valid-file2"])
-    {:ok, Map}
-    ```
+  ## Examples
+
+      iex> WaifuVault.associate_file("some-valid-album-token", ["valid-file1". "valid-file2"])
+      {:ok, %{...}}
+
   """
   @doc group: "Albums"
   def associate_file(album_token, file_tokens) do
@@ -192,13 +200,14 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The disassociate_file/2 function dis-connects one or more files from an album.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementDisassociateFileWithAlbum)
+  Disconnects one or more files from an album.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementDisassociateFileWithAlbum)
 
-    ```
-    iex> {:ok, album_response} = WaifuVault.disassociate_file("some-valid-album-token", ["valid-file1". "valid-file2"])
-    {:ok, Map}
-    ```
+  ## Examples
+
+      iex> WaifuVault.disassociate_file("some-valid-album-token", ["valid-file1". "valid-file2"])
+      {:ok, %{...}}
+
   """
   @doc group: "Albums"
   def disassociate_file(album_token, file_tokens) do
@@ -216,16 +225,18 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The share_album/1 function takes the album's private token and returns the public URL.
-    Calling share_album/1 on an already-shared album will just return its token.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementShareAlbum)
+  Takes the album's private token and returns the public URL.
+  Calling `share_album/1` on an already-shared album will just return its token.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementShareAlbum)
 
-    ```
-    iex> {:ok, url} = WaifuVault.share_album("some-valid-album-token")
-    {:ok, "https://waifuvault.moe/public-token"}
-    iex> {:ok, token} = WaifuVault.share_album("some-valid-album-token")
-    {:ok, "public-token"}
-    ```
+  ## Examples
+
+      iex> WaifuVault.share_album("some-valid-album-token")
+      {:ok, "https://waifuvault.moe/public-token"}
+
+      iex> WaifuVault.share_album("some-valid-album-token")
+      {:ok, "public-token"}
+
   """
   @doc group: "Albums"
   def share_album(album_token) do
@@ -239,14 +250,15 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The revoke_album/1 function disables public sharing.
-    Note that future calls to share_album/1 will give it a new public token and new public URL.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementRevokeShare)
+  Disables public sharing.
+  Note that future calls to share_album/1 will give it a new public token and new public URL.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementRevokeShare)
 
-    ```
-    iex> {:ok, album_response} = WaifuVault.revoke_album("some-valid-album-token")
-    {:ok, "album unshared"}
-    ```
+  ## Examples
+
+      iex> WaifuVault.revoke_album("some-valid-album-token")
+      {:ok, "album unshared"}
+
   """
   @doc group: "Albums"
   def revoke_album(album_token) do
@@ -260,13 +272,14 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The download_album/2 function fetches a zip file containing either the whole album, or specified files.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementDownloadFiles)
+  Fetches a zip file containing either the whole album, or specified files.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/Album%20management/albumManagementDownloadFiles)
 
-    ```
-    iex> {:ok, zip_data} = WaifuVault.download_album("some-valid-album-token", ["file.jpg", "file2.jpg"])
-    {:ok, zip_data}
-    ```
+  ## Examples
+
+      iex> WaifuVault.download_album("some-valid-album-token", ["file.jpg", "file2.jpg"])
+      {:ok, <<...>>}
+
   """
   @doc group: "Albums"
   def download_album(album_token, file_names \\ []) do
@@ -274,9 +287,9 @@ defmodule WaifuVault do
            url: "/album/download/#{album_token}",
            json: file_names,
            into: :self
-         )
-         |> IO.inspect(label: "\nraw") do
+         ) do
       {:ok, %Req.Response{status: 200, body: _body} = response} ->
+        Logger.debug(inspect(response, pretty: true))
         zip_data = Enum.reduce(response.body, "", fn stream, acc -> acc <> stream end)
 
         file_name =
@@ -289,20 +302,23 @@ defmodule WaifuVault do
         {:ok, file_name, zip_data}
 
       any_other_response ->
+        Logger.debug(inspect(any_other_response))
         handle_error(any_other_response, true)
     end
   end
 
   @doc """
-    The get_file/2 function retrieves the contents of the specified file, which can be specified via URL or by token
-    (which is used to *look up* the URL).
-    The password, if passed, is ignored unless the file is password-protected.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadGetInfo)
+  Retrieves the contents of the specified file, which can be specified via URL or by token
+  (which is used to *look up* the URL).
 
-    ```
-    iex> {:ok, bitstring} = WaifuVault.get_file("some-valid-album-token", "some-password")
-    {:ok, <<many bytes>>}
-    ```
+  The password, if passed, is ignored unless the file is password-protected.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadGetInfo)
+
+  ## Examples
+
+    iex> WaifuVault.get_file("some-valid-album-token", "some-password")
+    {:ok, <<...>>}
+
   """
   @doc group: "Files"
   def get_file(album_response, password \\ nil)
@@ -338,13 +354,14 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The file_info/2 function retrieves file metadata for the specified file token.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadGetInfo)
+  Retrieves file metadata for the specified file token.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadGetInfo)
 
-    ```
-    iex> {:ok, map} = WaifuVault.file_info("some-valid-file-token")
-    {:ok, %{...}}
-    ```
+  ## Examples
+
+      iex> WaifuVault.file_info("some-valid-file-token")
+      {:ok, %{...}}
+
   """
   @doc group: "Files"
   def file_info(token, formatted \\ false) do
@@ -358,15 +375,16 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The upload_file_from_buffer/3 function posts the data to the server, returning a fileResponse map.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry)
-    [and parallel Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry_1)
+  Posts the data to the server, returning a fileResponse map.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry)
+  [and parallel Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry_1)
 
-    ```
-    iex> {:ok, buffer} = File.read("some/local/file")
-    iex> {:ok, fileResponse} = WaifuVault.upload_file_from_buffer(buffer, "file.name", %{expires: "10m"})
-    {:ok, %{...}}
-    ```
+  ## Examples
+
+      iex> {:ok, buffer} = File.read("some/local/file")
+      iex> {:ok, fileResponse} = WaifuVault.upload_file_from_buffer(buffer, "file.name", %{expires: "10m"})
+      {:ok, %{...}}
+
   """
   @doc group: "Files"
   def upload_file_from_buffer(buffer, file_name, options \\ %{}) do
@@ -403,7 +421,7 @@ defmodule WaifuVault do
              headers: headers,
              body: Multipart.body_stream(multipart)
            ) do
-      IO.puts("Status #{status} means #{@upload_status[status] || "UNKNOWN"}")
+      Logger.debug("Status #{status} means #{@upload_status[status] || "UNKNOWN"}")
       {:ok, file_response_from_map(body)}
     else
       {:get_restrictions, error} ->
@@ -415,16 +433,17 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The upload_local_file/3 function simplifies the process of uploading a local file with a simple
-    wrapper around upload_file_from_buffer/3. It posts the data to the server, returning a fileResponse map.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry)
-    [and parallel Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry_1)
+  Simplifies the process of uploading a local file with a simple
+  wrapper around `upload_file_from_buffer/3`. It posts the data to the server, returning a fileResponse map.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry)
+  [and parallel Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry_1)
 
-    ```
-    iex> options = %{}
-    iex> {:ok, fileResponse} = WaifuVault.upload_local_file("./mix.exs", "my_mix.exs", options)
-    {:ok, %{...}}
-    ```
+  ## Examples
+
+      iex> options = %{}
+      iex> WaifuVault.upload_local_file("./mix.exs", "my_mix.exs", options)
+      {:ok, %{...}}
+
   """
   @doc group: "Files"
   def upload_local_file(local_path, file_name, options \\ %{}) do
@@ -438,16 +457,17 @@ defmodule WaifuVault do
   end
 
   @doc """
-    Uploading a file specified via URL. Setting the :bucket option will place the file
-    in the specified bucket (assuming it exists).
-    [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry)
-    [and parallel Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry_1)
+  Uploading a file specified via URL. Setting the `:bucket` option will place the file
+  in the specified bucket (assuming it exists).
+  [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry)
+  [and parallel Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadAddEntry_1)
 
-    ```
-    iex> options = %{}
-    iex> {:ok, fileResponse} = WaifuVault.upload_via_url(image_url, options)
-    {:ok, %{...}}
-    ```
+  ## Examples
+
+      iex> options = %{}
+      iex> WaifuVault.upload_via_url(image_url, options)
+      {:ok, %{...}}
+
   """
   @doc group: "Files"
   def upload_via_url(url, options \\ %{}) do
@@ -464,11 +484,11 @@ defmodule WaifuVault do
            json: json_data
          ) do
       {:ok, %Req.Response{status: 200, body: body}} ->
-        IO.puts("File already exists")
+        Logger.debug("File already exists")
         {:ok, file_response_from_map(body)}
 
       {:ok, %Req.Response{status: 201, body: body}} ->
-        IO.puts("New file stored successfully")
+        Logger.debug("New file stored successfully")
         {:ok, file_response_from_map(body)}
 
       any_other_response ->
@@ -530,13 +550,15 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The update_file/2 function returns `{:ok, file_data}` for a successful update.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadModifyEntry)
+  Updates a file.
+  Returns `{:ok, file_data}` for a successful update.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadModifyEntry)
 
-    ```
-    iex> {:ok, true} = WaifuVault.update_file(file_token, %{...})
-    {:ok, true}
-    ```
+  ## Examples
+
+      iex> WaifuVault.update_file(file_token, %{...})
+      {:ok, true}
+
   """
   @doc group: "Files"
   def update_file(file_token, options) do
@@ -554,19 +576,20 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The delete_file/1 function returns `{:ok, true}` for a successful deletion.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadDeleteEntry)
+  Returns `{:ok, true}` for a successful deletion.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/File%20Upload/fileUploadDeleteEntry)
 
-    ```
-    iex> {:ok, true} = WaifuVault.delete_file(file_token)
-    {:ok, true}
-    ```
+  ## Examples
+
+      iex> WaifuVault.delete_file(file_token)
+      {:ok, true}
+
   """
   @doc group: "Files"
   def delete_file(file_token) do
     case Req.delete(@request_options, url: "/#{file_token}") do
       {:ok, %Req.Response{status: 200, body: body}} ->
-        IO.inspect(body, label: "raw delete response")
+        Logger.debug("raw delete response: " <> inspect(body))
         {:ok, body}
 
       any_other_response ->
@@ -575,21 +598,22 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The get_restrictions/0 function returns restrictions for the current IP address.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/Resource%20Management/resourceManagementGetRestrictions)
+  Returns restrictions for the current IP address.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/Resource%20Management/resourceManagementGetRestrictions)
 
-    ```
-    iex> {:ok, restrictions} = WaifuVault.get_restrictions()
-    {:ok,
-      [
-        %{type: "MAX_FILE_SIZE", value: 104857600},
-        %{
-          type: "BANNED_MIME_TYPE",
-          value: "application/x-dosexec,application/x-executable,application/x-hdf5,application/x-java-archive,application/vnd.rar"
-        }
-      ]
-    }
-    ```
+  ## Examples
+
+      iex> WaifuVault.get_restrictions()
+      {:ok,
+        [
+          %{type: "MAX_FILE_SIZE", value: 104857600},
+          %{
+            type: "BANNED_MIME_TYPE",
+            value: "application/x-dosexec,application/x-executable,application/x-hdf5,application/x-java-archive,application/vnd.rar"
+          }
+        ]
+      }
+
   """
   @doc group: "Resources"
   def get_restrictions() do
@@ -606,13 +630,14 @@ defmodule WaifuVault do
   end
 
   @doc """
-    The get_file_stats/0 function returns server limits for the current IP address.
-    [Swagger docs](https://waifuvault.moe/api-docs/#/Resource%20Management/resourceManagementStorage)
+  Returns server limits for the current IP address.
+  [Swagger docs](https://waifuvault.moe/api-docs/#/Resource%20Management/resourceManagementStorage)
 
-    ```
-    iex> WaifuVault.get_file_stats
-    {:ok, %{"recordCount" => 1420, "recordSize" => "1.92 GiB"}}
-    ```
+  ## Examples
+
+      iex> WaifuVault.get_file_stats
+      {:ok, %{"recordCount" => 1420, "recordSize" => "1.92 GiB"}}
+
   """
   @doc group: "Resources"
   def get_file_stats() do
@@ -645,7 +670,7 @@ defmodule WaifuVault do
 
   def handle_error({_, %Req.Response{body: %Req.Response.Async{} = async}}, true) do
     body = Enum.reduce(async, "", fn stream, acc -> acc <> stream end)
-    IO.inspect(body, label: "handle_error async body")
+    Logger.debug("handle_error async body: " <> inspect(body))
 
     {:error, body}
   end
